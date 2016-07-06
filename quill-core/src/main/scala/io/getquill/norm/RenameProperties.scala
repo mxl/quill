@@ -1,69 +1,74 @@
 package io.getquill.norm
 
-import io.getquill.ast.Ast
+import io.getquill.ast._
 import io.getquill.ast.Entity
 import io.getquill.ast.Filter
 import io.getquill.ast.FlatMap
 import io.getquill.ast.Ident
 import io.getquill.ast.Join
 import io.getquill.ast.Map
-import io.getquill.ast.OptionOperation
 import io.getquill.ast.Property
-import io.getquill.ast.Query
 import io.getquill.ast.SortBy
 import io.getquill.ast.StatefulTransformer
 
-case class RenameProperties(state: collection.Map[Ident, collection.Map[String, String]])
-  extends StatefulTransformer[collection.Map[Ident, collection.Map[String, String]]] {
+case class RenameProperties(state: Tuple)
+  extends StatefulTransformer[Tuple] {
 
-  override def apply(q: Query): (Query, StatefulTransformer[collection.Map[Ident, collection.Map[String, String]]]) =
-    q match {
-      case FlatMap(q: Entity, x, p)   => apply(q, x, p)(FlatMap)
+  override def apply(ast: Ast): (Ast, StatefulTransformer[Tuple]) =
+    ast match {
+      case ast: Entity =>
+        (ast, RenameProperties(Tuple(List(ast))))
 
-      case Map(q: Entity, x, p)       => apply(q, x, p)(Map)
-
-      case Filter(q: Entity, x, p)    => apply(q, x, p)(Filter)
-
-      case SortBy(q: Entity, x, p, o) => apply(q, x, p)(SortBy(_, _, _, o))
-
-      case q @ Join(t, a: Entity, b: Entity, iA, iB, o) =>
-        val ((_, _, or), ort) = apply(a, iA, o)((_, _, _))
-        val ((_, _, orr), orrt) = apply(b, iB, or)((_, _, _))
-        (Join(t, a, b, iA, iB, orr), RenameProperties(state ++ ort.state ++ orrt.state))
-
-      case q @ Join(t, a: Entity, b, iA, iB, o) =>
-        val ((_, _, or), ort) = apply(a, iA, o)((_, _, _))
-        val (br, brt) = apply(b)
-        (Join(t, a, br, iA, iB, or), RenameProperties(state ++ ort.state ++ brt.state))
-
-      case q @ Join(t, a: Query, b: Entity, iA, iB, o) =>
+      case Join(t, a, b, iA, iB, o) =>
         val (ar, art) = apply(a)
-        val ((_, _, or), ort) = apply(b, iB, o)((_, _, _))
-        (Join(t, ar, b, iA, iB, or), RenameProperties(state ++ art.state ++ ort.state))
+        val (br, brt) = apply(b)
+        val ora = apply(art.state, iA, o)
+        val orb = apply(brt.state, iB, ora)
+        val rt = RenameProperties(Tuple(List(art.state, brt.state)))
+        (Join(t, ar, br, iA, iB, orb), rt)
 
-      case other => super.apply(q)
+      case FlatMap(q, x, p) =>
+        apply(q, x, p)(FlatMap) match {
+          case (FlatMap(q, x, p), _) =>
+            val (pr, prt) = apply(p)
+            (FlatMap(q, x, pr), prt)
+        }
+
+      case Map(q, x, p)       => apply(q, x, p)(Map)
+      case Filter(q, x, p)    => apply(q, x, p)(Filter)
+      case SortBy(q, x, p, o) => apply(q, x, p)(SortBy(_, _, _, o))
+      case GroupBy(q, x, p)   => apply(q, x, p)(GroupBy)
+
+      case other              => super.apply(other)
     }
 
-  override def apply(q: Ast): (Ast, StatefulTransformer[collection.Map[Ident, collection.Map[String, String]]]) =
-    q match {
-      case Property(ident: Ident, prop) if (state.contains(ident)) =>
-        (Property(ident, state(ident).getOrElse(prop, prop)), this)
-      case OptionOperation(t, q: Ident, x, p) if (state.contains(q)) =>
-        val (pr, _) = RenameProperties(state + (x -> state(q)))(p)
-        (OptionOperation(t, q, x, pr), this)
-      case other =>
-        super.apply(other)
-    }
+  def apply[T](q: Ast, x: Ident, p: Ast)(f: (Ast, Ident, Ast) => T): (T, StatefulTransformer[Tuple]) = {
+    val (qr, qrt) = apply(q)
+    val pr = apply(qrt.state, x, p)
+    (f(qr, x, pr), qrt)
+  }
 
-  private def apply[T](q: Entity, x: Ident, p: Ast)(f: (Ast, Ident, Ast) => T): (T, StatefulTransformer[collection.Map[Ident, collection.Map[String, String]]]) = {
-    val (pr, prt) = RenameProperties(state + (x -> q.properties.map(p => p.property -> p.alias).toMap))(p)
-    (f(q, x, pr), prt)
+  def apply[T](t: Tuple, x: Ident, p: Ast) = {
+    def reductionMap(base: Ast, tuple: Ast): collection.Map[Ast, Ast] =
+      tuple match {
+        case Tuple(List(e: Entity)) =>
+          (for (PropertyAlias(prop, alias) <- e.properties) yield {
+            Property(base, prop) -> Property(base, alias)
+          }).toMap
+        case Tuple(Nil) =>
+          collection.Map.empty
+        case Tuple(tuples) =>
+          (for ((tuple, idx) <- tuples.zipWithIndex) yield {
+            reductionMap(Property(base, s"_${idx + 1}"), tuple)
+          }).reduce(_ ++ _)
+      }
+    BetaReduction(reductionMap(x, t))(p)
   }
 }
 
 object RenameProperties {
   def apply(q: Ast) =
-    new RenameProperties(collection.Map())(q) match {
+    new RenameProperties(Tuple(List()))(q) match {
       case (q, _) => q
     }
 }

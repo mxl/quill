@@ -11,7 +11,6 @@ import io.getquill.ast.FlatMap
 import io.getquill.ast.Function
 import io.getquill.ast.FunctionApply
 import io.getquill.ast.GroupBy
-import io.getquill.ast.Ident
 import io.getquill.ast.Join
 import io.getquill.ast.Map
 import io.getquill.ast.OptionOperation
@@ -25,11 +24,13 @@ import io.getquill.ast.Union
 import io.getquill.ast.UnionAll
 import io.getquill.ast.Val
 
-case class BetaReduction(map: collection.Map[Ident, Ast])
+case class BetaReduction(map: collection.Map[Ast, Ast])
   extends StatelessTransformer {
 
   override def apply(ast: Ast) =
     ast match {
+      case ast if(map.contains(ast)) =>
+        BetaReduction(map - ast)(map(ast))
       case Property(Tuple(values), name) =>
         val aliases = values.distinct
         aliases match {
@@ -39,8 +40,6 @@ case class BetaReduction(map: collection.Map[Ident, Ast])
         }
       case FunctionApply(Function(params, body), values) =>
         apply(BetaReduction(map ++ params.zip(values).toMap).apply(body))
-      case ident: Ident =>
-        map.get(ident).map(BetaReduction(map - ident)(_)).getOrElse(ident)
       case Function(params, body) =>
         Function(params, BetaReduction(map -- params)(body))
       case OptionOperation(t, a, b, c) =>
@@ -73,7 +72,7 @@ case class BetaReduction(map: collection.Map[Ident, Ast])
 
 object BetaReduction {
 
-  def apply(ast: Ast, t: (Ident, Ast)*): Ast =
+  def apply(ast: Ast, t: (Ast, Ast)*): Ast =
     BetaReduction(t.toMap)(ast) match {
       case `ast` => ast
       case other => apply(other)

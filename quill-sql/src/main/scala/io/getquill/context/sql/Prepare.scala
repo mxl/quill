@@ -29,13 +29,13 @@ object Prepare {
 
   private[this] val normalize =
     (identity[Ast] _)
+      .andThen(FlattenOptionOperation.apply _)
+      .andThen(RenameProperties.apply _)
+      .andThen(RenameAssignments.apply _)
       .andThen(NormalizeReturning.apply _)
       .andThen(Normalize.apply _)
       .andThen(ExpandJoin.apply _)
       .andThen(Normalize.apply _)
       .andThen(MergeSecondaryJoin.apply _)
-      .andThen(FlattenOptionOperation.apply _)
-      .andThen(RenameAssignments.apply _)
-      .andThen(RenameProperties.apply _)
 
 }
