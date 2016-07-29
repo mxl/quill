@@ -98,7 +98,7 @@ trait Parsing extends EntityConfigParsing {
     case q"if($a) $b else $c" => If(astParser(a), astParser(b), astParser(c))
   }
 
-  val bindingParser: Parser[Binding] = Parser[Binding] {
+  val bindingParser: Parser[Ast] = Parser[Ast] {
     case q"$pack.lift[$t]($value)" if (t.tpe <:< c.weakTypeOf[AnyVal]) =>
       t.tpe.members.collect {
         case m: MethodSymbol if (m.isPrimaryConstructor) => m.paramLists.flatten
@@ -107,6 +107,7 @@ trait Parsing extends EntityConfigParsing {
         case None        => CompileTimeBinding(value)
       }
     case q"$pack.lift[$t]($value)" => CompileTimeBinding(value)
+    case q"$pack.lift2[$t]($value)($encoder)" => Lift(value, encoder)
   }
 
   val quotedAstParser: Parser[Ast] = Parser[Ast] {

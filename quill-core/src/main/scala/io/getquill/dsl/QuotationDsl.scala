@@ -1,5 +1,6 @@
 package io.getquill.dsl
 
+import scala.language.higherKinds
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 import scala.reflect.macros.whitebox.Context
@@ -15,9 +16,15 @@ private[dsl] trait QuotationDsl {
     def ast: Ast
     def dynamic: Quoted[T] = this
   }
+  
 
   @compileTimeOnly(NonQuotedException.message)
   def lift[T](v: T): T = NonQuotedException()
+  
+  type Encoder[T]
+  
+  @compileTimeOnly(NonQuotedException.message)
+  def lift2[T](v: T)(e: Encoder[T]): T = NonQuotedException()
 
   def quote[T](body: Quoted[T]): Quoted[T] = macro QuotationMacro.doubleQuote[T]
   def quote[T1, R](func: T1 => Quoted[R]): Quoted[T1 => R] = macro QuotationMacro.quotedFunctionBody
