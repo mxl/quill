@@ -3,7 +3,7 @@ package io.getquill
 import io.getquill.context.Context
 
 trait TestEntities {
-  this: Context[_, _] =>
+  this: Context =>
 
   case class TestEntity(s: String, i: Int, l: Long, o: Option[Int])
   case class TestEntity2(s: String, i: Int, l: Long, o: Option[Int])

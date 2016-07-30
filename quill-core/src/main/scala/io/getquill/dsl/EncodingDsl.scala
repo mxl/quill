@@ -6,19 +6,19 @@ import io.getquill.quotation.NonQuotedException
 
 trait EncodingDsl {
 
-  type Row
-  type Result
+  type PrepareRow
+  type ResultRow
 
   trait Decoder[+T] {
-    def apply(index: Int, row: Result): T
+    def apply(index: Int, row: ResultRow): T
   }
 
   trait Encoder[-T] {
-    def apply(index: Int, value: T, row: Row): Row
+    def apply(index: Int, value: T, row: PrepareRow): PrepareRow
   }
-  
+
   @compileTimeOnly(NonQuotedException.message)
-  def lift[T](v: T)(e: Encoder[T]): T = NonQuotedException()
+  def lift[T](v: T)(implicit e: Encoder[T]): T = NonQuotedException()
 
   case class MappedEncoding[I, O](f: I => O)
 
@@ -26,13 +26,13 @@ trait EncodingDsl {
 
   implicit def mappedDecoder[I, O](implicit mapped: MappedEncoding[I, O], decoder: Decoder[I]): Decoder[O] =
     new Decoder[O] {
-      def apply(index: Int, row: Result) =
+      def apply(index: Int, row: ResultRow) =
         mapped.f(decoder(index, row))
     }
 
   implicit def mappedEncoder[I, O](implicit mapped: MappedEncoding[I, O], encoder: Encoder[O]): Encoder[I] =
     new Encoder[I] {
-      def apply(index: Int, value: I, row: Row) =
+      def apply(index: Int, value: I, row: PrepareRow) =
         encoder(index, mapped.f(value), row)
     }
 

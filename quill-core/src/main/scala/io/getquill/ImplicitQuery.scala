@@ -30,7 +30,7 @@ import io.getquill.util.Messages.RichContext
 import io.getquill.context.Context
 
 trait ImplicitQuery {
-  this: Context[_, _] =>
+  this: Context =>
 
   implicit def toQuery[P <: Product](f: AbstractFunction1[_, P]): Query[P] = macro ImplicitQueryMacro.toQuery[P]
   implicit def toQuery[P <: Product](f: AbstractFunction2[_, _, P]): Query[P] = macro ImplicitQueryMacro.toQuery[P]

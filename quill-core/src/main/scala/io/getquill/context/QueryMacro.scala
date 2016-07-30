@@ -9,6 +9,7 @@ import io.getquill.ast.Query
 import io.getquill.norm.Normalize
 import io.getquill.norm.select.SelectFlattening
 import io.getquill.norm.select.SelectResultExtraction
+import io.getquill.ast.Lift
 
 trait QueryMacro extends SelectFlattening with SelectResultExtraction {
   this: ContextMacro =>
@@ -32,8 +33,15 @@ trait QueryMacro extends SelectFlattening with SelectResultExtraction {
     q"""
     {
       val quoted = $quotedTree
-      val (sql, bind: ($r => r), _) =
+      val (sql, liftings: List[io.getquill.ast.Lift], _) =
           ${prepare(flattenQuery)}
+          
+      val bind =
+        (row: $r) => 
+          (liftings.foldLeft((0, row)) {
+            case ((idx, row), lift) =>
+              (idx + 1, lift.encoder(idx, lift.value, row))
+          })._2
 
       ${c.prefix}.$queryMethod(
         sql,

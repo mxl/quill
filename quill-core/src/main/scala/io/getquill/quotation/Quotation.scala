@@ -7,10 +7,8 @@ import scala.reflect.macros.whitebox.Context
 
 import io.getquill.ast._
 import io.getquill.ast.CollectAst
-import io.getquill.ast.CompileTimeBinding
 import io.getquill.ast.Dynamic
 import io.getquill.ast.QuotedReference
-import io.getquill.ast.RuntimeBinding
 import io.getquill.ast.Transform
 import io.getquill.util.Messages.RichContext
 import io.getquill.dsl.EncodingDsl

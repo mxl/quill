@@ -10,6 +10,7 @@ trait Unliftables {
   import c.universe.{ Ident => _, Constant => _, Function => _, If => _, _ }
 
   implicit val astUnliftable: Unliftable[Ast] = Unliftable[Ast] {
+    case liftUnliftable(ast) => ast
     case queryUnliftable(ast) => ast
     case actionUnliftable(ast) => ast
     case valueUnliftable(ast) => ast
@@ -25,7 +26,6 @@ trait Unliftables {
     case q"$pack.OptionOperation.apply(${ a: OptionOperationType }, ${ b: Ast }, ${ c: Ident }, ${ d: Ast })" => OptionOperation(a, b, c, d)
     case q"$pack.If.apply(${ a: Ast }, ${ b: Ast }, ${ c: Ast })" => If(a, b, c)
     case q"$tree.ast" => Dynamic(tree)
-    case q"$pack.RuntimeBinding.apply(${ a: String })" => RuntimeBinding(a)
   }
 
   implicit val optionOperationTypeUnliftable: Unliftable[OptionOperationType] = Unliftable[OptionOperationType] {
@@ -150,5 +150,7 @@ trait Unliftables {
   implicit val identUnliftable: Unliftable[Ident] = Unliftable[Ident] {
     case q"$pack.Ident.apply(${ a: String })" => Ident(a)
   }
-
+  implicit val liftUnliftable: Unliftable[Lift] = Unliftable[Lift] {
+    case q"$pack.Lift.apply(${a: String}, $b, $c)" => Lift(a, b, c)
+  }
 }

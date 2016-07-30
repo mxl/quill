@@ -133,8 +133,4 @@ case class Dynamic(tree: Any) extends Ast
 
 case class QuotedReference(tree: Trees#Tree, ast: Ast) extends Ast
 
-sealed trait Binding extends Ast
-case class RuntimeBinding(name: String) extends Binding
-case class CompileTimeBinding(tree: Any) extends Binding
-
-case class Lift(value: Trees#Tree, encoder: Trees#Tree) extends Ast
+case class Lift(name: String, value: Any, encoder: Any) extends Ast

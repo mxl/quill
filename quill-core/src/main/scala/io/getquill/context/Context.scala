@@ -6,7 +6,7 @@ import io.getquill.dsl.CoreDsl
 import java.io.Closeable
 import io.getquill.WrappedType
 
-abstract class Context[R: ClassTag, S: ClassTag] extends Closeable with CoreDsl {
+abstract class Context extends Closeable with CoreDsl {
 
   protected def handleSingleResult[T](list: List[T]) =
     list match {

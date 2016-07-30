@@ -17,12 +17,12 @@ object AstShow {
     case ast: Infix           => ast.show
     case ast: OptionOperation => ast.show
     case ast: Dynamic         => ast.show
-    case ast: Binding         => ast.show
     case ast: If              => ast.show
     case ast: Block           => ast.show
     case ast: Val             => ast.show
     case ast: Ordering        => ast.show
     case q: QuotedReference   => q.ast.show
+    case ast: Lift            => ast.show
   }
 
   implicit val ifShow: Show[If] = Show[If] {
@@ -33,9 +33,8 @@ object AstShow {
     case Dynamic(tree) => tree.toString
   }
 
-  implicit val bindingShow: Show[Binding] = Show[Binding] {
-    case RuntimeBinding(name)     => s"lift($name)"
-    case CompileTimeBinding(tree) => s"lift($tree)"
+  implicit val liftShow: Show[Lift] = Show[Lift] {
+    case Lift(a, b, c) => s"lift($b)($c)"
   }
 
   implicit val blockShow: Show[Block] = Show[Block] {

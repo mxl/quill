@@ -30,7 +30,7 @@ trait Parsing extends EntityConfigParsing {
   }
 
   val astParser: Parser[Ast] = Parser[Ast] {
-    case `bindingParser`(value)             => value
+    case `liftParser`(value)                => value
     case `valParser`(value)                 => value
     case `patMatchValParser`(value)         => value
     case `valueParser`(value)               => value
@@ -98,16 +98,8 @@ trait Parsing extends EntityConfigParsing {
     case q"if($a) $b else $c" => If(astParser(a), astParser(b), astParser(c))
   }
 
-  val bindingParser: Parser[Ast] = Parser[Ast] {
-    case q"$pack.lift[$t]($value)" if (t.tpe <:< c.weakTypeOf[AnyVal]) =>
-      t.tpe.members.collect {
-        case m: MethodSymbol if (m.isPrimaryConstructor) => m.paramLists.flatten
-      }.flatten.headOption match {
-        case Some(param) => CompileTimeBinding(c.typecheck(q"$value.${param.name.toTermName}"))
-        case None        => CompileTimeBinding(value)
-      }
-    case q"$pack.lift[$t]($value)" => CompileTimeBinding(value)
-    case q"$pack.lift2[$t]($value)($encoder)" => Lift(value, encoder)
+  val liftParser: Parser[Lift] = Parser[Lift] {
+    case q"$pack.lift[$t]($value)($encoder)" => Lift(value.toString, value, encoder)
   }
 
   val quotedAstParser: Parser[Ast] = Parser[Ast] {
@@ -294,8 +286,7 @@ trait Parsing extends EntityConfigParsing {
   }
 
   private def operationParser(cond: Tree => Boolean)(
-    f: PartialFunction[String, Operator]
-  ): Parser[Operation] = {
+    f: PartialFunction[String, Operator]): Parser[Operation] = {
     object operator {
       def unapply(t: TermName) =
         f.lift(t.decodedName.toString)

@@ -16,7 +16,7 @@ trait QueryProbingMacro {
   val c: MacroContext
   import c.universe.{ Try => _, _ }
 
-  def probeQuery[T <: Context[_, _]](f: T => Try[_]) = {
+  def probeQuery[T <: Context](f: T => Try[_]) = {
     val tpe = c.prefix.tree.tpe
     QueryProbingMacro.cache
       .getOrElseUpdate(tpe, resolveContext(tpe), 30.seconds)
@@ -43,7 +43,7 @@ trait QueryProbingMacro {
         None
     }
 
-  private def loadContext(tpe: Type): Try[Context[_, _]] =
+  private def loadContext(tpe: Type): Try[Context] =
     Try {
       tpe match {
         case tpe if (tpe.erasure <:< c.weakTypeOf[Singleton]) =>
@@ -53,9 +53,9 @@ trait QueryProbingMacro {
         case tpe =>
           Class.forName(tpe.typeSymbol.fullName).newInstance
       }
-    }.asInstanceOf[Try[Context[_, _]]]
+    }.asInstanceOf[Try[Context]]
 }
 
 object QueryProbingMacro {
-  private val cache = new Cache[Types#Type, Context[_, _]]
+  private val cache = new Cache[Types#Type, Context]
 }
