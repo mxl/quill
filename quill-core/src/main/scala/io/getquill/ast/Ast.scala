@@ -1,5 +1,7 @@
 package io.getquill.ast
 
+import scala.reflect.api.Trees
+
 //************************************************************
 
 sealed trait Ast {
@@ -129,10 +131,10 @@ case class Assignment(input: Ident, property: String, value: Ast)
 
 case class Dynamic(tree: Any) extends Ast
 
-case class QuotedReference[T](tree: T, ast: Ast) extends Ast
+case class QuotedReference(tree: Trees#Tree, ast: Ast) extends Ast
 
 sealed trait Binding extends Ast
 case class RuntimeBinding(name: String) extends Binding
 case class CompileTimeBinding(tree: Any) extends Binding
 
-case class Lift[Tree](value: Tree, encoder: Tree) extends Ast
+case class Lift(value: Trees#Tree, encoder: Trees#Tree) extends Ast
