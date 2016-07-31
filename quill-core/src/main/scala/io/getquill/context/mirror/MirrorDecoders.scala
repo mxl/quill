@@ -3,7 +3,6 @@ package io.getquill.context.mirror
 import java.util.Date
 
 import scala.reflect.ClassTag
-import io.getquill.context.Context
 import io.getquill.MirrorContext
 
 trait MirrorDecoders {

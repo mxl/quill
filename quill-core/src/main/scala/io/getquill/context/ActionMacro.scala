@@ -2,13 +2,9 @@ package io.getquill.context
 
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
 
-import io.getquill.ast.AssignedAction
-import io.getquill.ast.Assignment
 import io.getquill.ast.Ast
 import io.getquill.ast.Ident
-import io.getquill.ast.Property
 import io.getquill.dsl.CoreDsl
-import io.getquill.util.Messages.fail
 
 trait ActionMacro extends EncodingMacro {
   this: ContextMacro =>
@@ -18,10 +14,13 @@ trait ActionMacro extends EncodingMacro {
 
   def runAction[R, S, T](
     quotedTree: Tree,
-    action: Ast)(
-      implicit r: WeakTypeTag[R],
-      s: WeakTypeTag[S],
-      t: WeakTypeTag[T]): Tree =
+    action:     Ast
+  )(
+    implicit
+    r: WeakTypeTag[R],
+    s: WeakTypeTag[S],
+    t: WeakTypeTag[T]
+  ): Tree =
     expandedTreeSingle[R](quotedTree, action, returningType(t.tpe))
 
   private def expandedTreeSingle[R](quotedTree: Tree, action: Ast, returningType: Type)(implicit r: WeakTypeTag[R]) =

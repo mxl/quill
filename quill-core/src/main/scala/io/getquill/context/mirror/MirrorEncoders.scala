@@ -1,7 +1,6 @@
 package io.getquill.context.mirror
 
 import java.util.Date
-import io.getquill.context.Context
 import io.getquill.MirrorContext
 
 trait MirrorEncoders {

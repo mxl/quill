@@ -3,22 +3,24 @@ package io.getquill.dsl
 import io.getquill.WrappedType
 import scala.annotation.compileTimeOnly
 import io.getquill.quotation.NonQuotedException
+import language.experimental.macros
+import io.getquill.lifting.LiftingMacro
 
 trait EncodingDsl {
 
   type PrepareRow
   type ResultRow
 
-  trait Decoder[+T] {
-    def apply(index: Int, row: ResultRow): T
-  }
+  type Decoder[T] = io.getquill.context.Decoder[ResultRow, T]
 
   trait Encoder[-T] {
     def apply(index: Int, value: T, row: PrepareRow): PrepareRow
   }
-
+  
+  def lift[T](v: T): T = macro LiftingMacro.lift[T]
+  
   @compileTimeOnly(NonQuotedException.message)
-  def lift[T](v: T)(implicit e: Encoder[T]): T = NonQuotedException()
+  def lift[T](v: T, e: Encoder[T]): T = NonQuotedException()
 
   case class MappedEncoding[I, O](f: I => O)
 

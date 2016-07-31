@@ -1,7 +1,6 @@
 package io.getquill.context
 
 import scala.concurrent.duration.DurationInt
-import scala.language.existentials
 import scala.reflect.api.Types
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
 import scala.util.Failure

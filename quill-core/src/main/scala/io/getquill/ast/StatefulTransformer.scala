@@ -38,7 +38,7 @@ trait StatefulTransformer[T] {
 
       case l: Dynamic => (l, this)
 
-      case l: Lift => (l, this)
+      case l: Lift    => (l, this)
 
       case QuotedReference(a, b) =>
         val (bt, btt) = apply(b)

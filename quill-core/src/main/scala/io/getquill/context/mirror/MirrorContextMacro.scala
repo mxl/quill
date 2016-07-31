@@ -18,14 +18,14 @@ class MirrorContextMacro(val c: MacroContext) extends ContextMacro {
         val returning = CollectAst(ast) {
           case Returning(_, property) => property
         }.headOption
-        
+
         val liftings = CollectAst(ast) {
           case l: Lift => l
         }
 
         val normalized = Normalize(ast)
 
-//        probeQuery[MirrorContext](_.probe(normalized))
+        //        probeQuery[MirrorContext](_.probe(normalized))
         c.info(normalized.toString)
 
         q"($normalized, List(..$liftings), $returning)"

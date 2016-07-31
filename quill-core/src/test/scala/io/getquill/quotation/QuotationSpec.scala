@@ -64,7 +64,7 @@ import io.getquill.ast.Union
 import io.getquill.ast.UnionAll
 import io.getquill.ast.Update
 import io.getquill.testContext._
-//import io.getquill.context.WrappedEncodable
+import io.getquill.context.WrappedEncodable
 
 case class CustomAnyValue(i: Int) extends AnyVal
 
@@ -91,7 +91,7 @@ class QuotationSpec extends Spec {
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
-            query[TestEntity].schema(_.columns(e => Predef.ArrowAssoc(e.s). -> [String]("theS")))
+            query[TestEntity].schema(_.columns(e => Predef.ArrowAssoc(e.s).->[String]("theS")))
           }
           quote(unquote(q)).ast mustEqual ConfiguredEntity(Entity("TestEntity"), properties = List(PropertyAlias("s", "theS")))
         }
@@ -338,7 +338,7 @@ class QuotationSpec extends Spec {
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
-            qr1.update(t => Predef.ArrowAssoc(t.s). -> [String]("s"))
+            qr1.update(t => Predef.ArrowAssoc(t.s).->[String]("s"))
           }
           quote(unquote(q)).ast mustEqual AssignedAction(Update(Entity("TestEntity")), List(Assignment(Ident("t"), "s", Constant("s"))))
         }
@@ -400,7 +400,7 @@ class QuotationSpec extends Spec {
             quote(unquote(q)).ast mustEqual Tuple(List(Tuple(List(Constant(1), Constant("a"))), Constant("b")))
           }
           "explicit `Predef.ArrowAssoc`" in {
-            val q = quote(Predef.ArrowAssoc("a"). -> [String]("b"))
+            val q = quote(Predef.ArrowAssoc("a").->[String]("b"))
             quote(unquote(q)).ast mustEqual Tuple(List(Constant("a"), Constant("b")))
           }
         }
@@ -851,72 +851,84 @@ class QuotationSpec extends Spec {
     }
   }
 
-  "bindings" - {
+  "liftings" - {
 
     import language.reflectiveCalls
 
-//    "retains binginds" - {
-//      "identifier" in {
-//        val i = 1
-//        val q = quote(lift(i))
-//        q.bindings.i mustEqual i
-//      }
-//      "property" in {
-//        case class Test(a: String)
-//        val t = Test("a")
-//        val q = quote(lift(t.a))
-//        q.bindings.`t.a` mustEqual t.a
-//      }
-//      "abritrary" in {
-//        val q = quote(lift(String.valueOf(1)))
-//        q.bindings.`java.this.lang.String.valueOf(1)` mustEqual String.valueOf(1)
-//      }
-//      "duplicate" in {
-//        val i = 1
-//        val q = quote(lift(i) + lift(i))
-//        q.bindings.i mustEqual i
-//      }
-//    }
+    "retains binginds" - {
+      "identifier" in {
+        val i = 1
+        val q = quote(lift(i))
 
-    "aggregates bindings of nested quotations" - {
+        val l = q.liftings.i
+        l.value mustEqual i
+        l.encoder mustEqual intEncoder
+      }
+      "property" in {
+        case class Test(a: String)
+        val t = Test("a")
+        val q = quote(lift(t.a))
+
+        val l = q.liftings.`t.a`
+        l.value mustEqual t.a
+        l.encoder mustEqual stringEncoder
+      }
+      "abritrary" in {
+        val q = quote(lift(String.valueOf(1)))
+        q.liftings.`java.this.lang.String.valueOf(1)`.value mustEqual String.valueOf(1)
+      }
+      "duplicate" in {
+        val i = 1
+        val q = quote(lift(i) + lift(i))
+        val l = q.liftings.i
+        l.value mustEqual i
+        l.encoder mustEqual intEncoder
+      }
+    }
+
+    "aggregates liftings of nested quotations" - {
       "one level" in {
         val i = 1
         val q1 = quote(lift(i))
         val q2 = quote(q1 + 1)
-        
-        q2.liftings.`q1.i`.value mustEqual i
-        q2.liftings.`q1.i`.encoder mustEqual intEncoder
+
+        val l = q2.liftings.`q1.i`
+        l.value mustEqual i
+        l.encoder mustEqual intEncoder
       }
       "multiple levels" in {
         val (a, b, c) = (1, 2L, 3f)
         val q1 = quote(lift(a))
         val q2 = quote(q1 + lift(b))
         val q3 = quote(q1 + q2 + lift(c))
-        
-        q3.liftings.`q2.q1.a`.value mustEqual a
-        q3.liftings.`q2.q1.a`.encoder mustEqual intEncoder
-        
-        q3.liftings.`q2.b`.value mustEqual b
-        q3.liftings.`q2.b`.encoder mustEqual longEncoder
-        
-        q3.liftings.c.value mustEqual c
-        q3.liftings.c.encoder mustEqual floatEncoder
+
+        val l1 = q3.liftings.`q2.q1.a`
+        l1.value mustEqual a
+        l1.encoder mustEqual intEncoder
+
+        val l2 = q3.liftings.`q2.b`
+        l2.value mustEqual b
+        l2.encoder mustEqual longEncoder
+
+        val l3 = q3.liftings.c
+        l3.value mustEqual c
+        l3.encoder mustEqual floatEncoder
       }
     }
 
-//    "supports WrappedValue" in {
-//      def q(v: WrappedEncodable) = quote {
-//        lift(v)
-//      }
-//      q(WrappedEncodable(1)).bindings.`v.value` mustEqual 1
-//    }
+    "supports WrappedValue" in {
+      def q(v: WrappedEncodable) = quote {
+        lift(v)
+      }
+      q(WrappedEncodable(1)).liftings.`v`.value mustEqual WrappedEncodable(1)
+    }
 
-//    "supports custom anyval" in {
-//      def q(v: CustomAnyValue) = quote {
-//        lift(v)
-//      }
-//      q(CustomAnyValue(1)).bindings.`v.i` mustEqual 1
-//    }
+    "supports custom anyval" in {
+      def q(v: CustomAnyValue) = quote {
+        lift(v)
+      }
+      q(CustomAnyValue(1)).liftings.`v`.value mustEqual CustomAnyValue(1)
+    }
   }
 
   "reduces tuple matching locally" - {
@@ -942,11 +954,9 @@ class QuotationSpec extends Spec {
           BinaryOperation(
             Property(Property(Ident("t"), "_1"), "_1"),
             NumericOperator.`+`,
-            Property(Property(Ident("t"), "_1"), "_2")
-          ),
+            Property(Property(Ident("t"), "_1"), "_2")),
           NumericOperator.`+`,
-          Property(Ident("t"), "_2")
-        )
+          Property(Ident("t"), "_2"))
     }
   }
 

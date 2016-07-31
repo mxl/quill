@@ -151,6 +151,6 @@ trait Unliftables {
     case q"$pack.Ident.apply(${ a: String })" => Ident(a)
   }
   implicit val liftUnliftable: Unliftable[Lift] = Unliftable[Lift] {
-    case q"$pack.Lift.apply(${a: String}, $b, $c)" => Lift(a, b, c)
+    case q"$pack.Lift.apply(${ a: String }, $b, $c)" => Lift(a, b, c)
   }
 }

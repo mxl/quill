@@ -1,6 +1,5 @@
 package io.getquill.dsl
 
-import scala.language.higherKinds
 import scala.language.experimental.macros
 import scala.language.implicitConversions
 import scala.reflect.macros.whitebox.Context

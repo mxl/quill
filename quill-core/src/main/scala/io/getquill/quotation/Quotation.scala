@@ -2,16 +2,10 @@ package io.getquill.quotation
 
 import scala.annotation.StaticAnnotation
 import scala.reflect.ClassTag
-import scala.reflect.NameTransformer
 import scala.reflect.macros.whitebox.Context
 
 import io.getquill.ast._
-import io.getquill.ast.CollectAst
-import io.getquill.ast.Dynamic
-import io.getquill.ast.QuotedReference
-import io.getquill.ast.Transform
 import io.getquill.util.Messages.RichContext
-import io.getquill.dsl.EncodingDsl
 import io.getquill.norm.BetaReduction
 
 case class QuotedAst(ast: Ast) extends StaticAnnotation

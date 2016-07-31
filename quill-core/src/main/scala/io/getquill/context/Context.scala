@@ -1,10 +1,7 @@
 package io.getquill.context
 
-import scala.reflect.ClassTag
-
 import io.getquill.dsl.CoreDsl
 import java.io.Closeable
-import io.getquill.WrappedType
 
 abstract class Context extends Closeable with CoreDsl {
 

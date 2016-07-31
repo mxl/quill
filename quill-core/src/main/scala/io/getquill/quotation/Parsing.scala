@@ -99,7 +99,7 @@ trait Parsing extends EntityConfigParsing {
   }
 
   val liftParser: Parser[Lift] = Parser[Lift] {
-    case q"$pack.lift[$t]($value)($encoder)" => Lift(value.toString, value, encoder)
+    case q"$pack.lift[$t]($value, $encoder)" => Lift(value.toString, value, encoder)
   }
 
   val quotedAstParser: Parser[Ast] = Parser[Ast] {
@@ -286,7 +286,8 @@ trait Parsing extends EntityConfigParsing {
   }
 
   private def operationParser(cond: Tree => Boolean)(
-    f: PartialFunction[String, Operator]): Parser[Operation] = {
+    f: PartialFunction[String, Operator]
+  ): Parser[Operation] = {
     object operator {
       def unapply(t: TermName) =
         f.lift(t.decodedName.toString)

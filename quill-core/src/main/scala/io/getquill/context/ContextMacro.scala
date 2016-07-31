@@ -4,7 +4,6 @@ import scala.reflect.macros.whitebox.{ Context => MacroContext }
 
 import io.getquill.ast.Ast
 import io.getquill.ast.Dynamic
-import io.getquill.ast.FunctionApply
 import io.getquill.ast.Ident
 import io.getquill.dsl.CoreDsl
 import io.getquill.quotation.Bindings

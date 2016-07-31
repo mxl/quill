@@ -9,7 +9,6 @@ import io.getquill.ast.Query
 import io.getquill.norm.Normalize
 import io.getquill.norm.select.SelectFlattening
 import io.getquill.norm.select.SelectResultExtraction
-import io.getquill.ast.Lift
 
 trait QueryMacro extends SelectFlattening with SelectResultExtraction {
   this: ContextMacro =>
@@ -19,9 +18,12 @@ trait QueryMacro extends SelectFlattening with SelectResultExtraction {
 
   def runQuery[R, S, T](
     quotedTree: Tree,
-    ast: Ast,
-    returnList: Boolean)(
-      implicit r: WeakTypeTag[R], s: WeakTypeTag[S], t: WeakTypeTag[T]): Tree = {
+    ast:        Ast,
+    returnList: Boolean
+  )(
+    implicit
+    r: WeakTypeTag[R], s: WeakTypeTag[S], t: WeakTypeTag[T]
+  ): Tree = {
 
     val query = Normalize(ast) match {
       case q: Query => q
