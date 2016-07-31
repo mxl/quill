@@ -134,3 +134,5 @@ case class Dynamic(tree: Any) extends Ast
 case class QuotedReference(tree: Trees#Tree, ast: Ast) extends Ast
 
 case class Lift(name: String, value: Any, encoder: Any) extends Ast
+
+case class CaseClassLift(value: Any) extends Ast

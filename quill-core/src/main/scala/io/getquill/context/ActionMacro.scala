@@ -27,8 +27,15 @@ trait ActionMacro extends EncodingMacro {
     q"""
     {
       val quoted = $quotedTree
-      val (sql, bind: ($r => $r), returning) =
+      val (sql, liftings, returning) =
         ${prepare(action)}
+
+      val bind =
+        (row: $r) => 
+          (liftings.foldLeft((0, row)) {
+            case ((idx, row), (value, encoder)) =>
+              (idx + 1, encoder(idx, value, row))
+          })._2
 
       ${c.prefix}.executeAction[$returningType](
         sql,

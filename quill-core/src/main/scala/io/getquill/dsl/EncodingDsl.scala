@@ -4,7 +4,6 @@ import io.getquill.WrappedType
 import scala.annotation.compileTimeOnly
 import io.getquill.quotation.NonQuotedException
 import language.experimental.macros
-import io.getquill.lifting.LiftingMacro
 
 trait EncodingDsl {
 
@@ -17,10 +16,13 @@ trait EncodingDsl {
     def apply(index: Int, value: T, row: PrepareRow): PrepareRow
   }
   
-  def lift[T](v: T): T = macro LiftingMacro.lift[T]
+  def lift[T](v: T): T = macro Macro.lift[T]
   
   @compileTimeOnly(NonQuotedException.message)
   def lift[T](v: T, e: Encoder[T]): T = NonQuotedException()
+  
+  @compileTimeOnly(NonQuotedException.message)
+  def liftCaseClass[T](v: T): T = NonQuotedException()
 
   case class MappedEncoding[I, O](f: I => O)
 

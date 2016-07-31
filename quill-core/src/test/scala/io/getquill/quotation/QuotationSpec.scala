@@ -463,7 +463,7 @@ class QuotationSpec extends Spec {
         val q = quote {
           f("s")
         }
-        quote(unquote(q)).ast mustEqual FunctionApply(f.ast, List(Constant("s")))
+        quote(unquote(q)).ast mustEqual Constant("s")
       }
       "function reference" in {
         val q = quote {
@@ -855,7 +855,7 @@ class QuotationSpec extends Spec {
 
     import language.reflectiveCalls
 
-    "retains binginds" - {
+    "retains liftings" - {
       "identifier" in {
         val i = 1
         val q = quote(lift(i))
@@ -913,6 +913,36 @@ class QuotationSpec extends Spec {
         val l3 = q3.liftings.c
         l3.value mustEqual c
         l3.encoder mustEqual floatEncoder
+      }
+
+      "merges properties into the case class lifting" - {
+        val t = TestEntity("s", 1, 2L, Some(3))
+        "direct access" in {
+          val q = quote {
+            lift(t).s
+          }
+          val l = q.liftings.`t.s`
+          l.value mustEqual t.s
+          l.encoder mustEqual stringEncoder
+        }
+        "after beta reduction" in {
+          val f = quote {
+            (t: TestEntity) => t.s
+          }
+
+          val q = quote {
+            f(lift(t))
+          }
+          val l = q.liftings.`t.s`
+          l.value mustEqual t.s
+          l.encoder mustEqual stringEncoder
+        }
+        "invalid nested case class" in {
+          case class Inner(s: String)
+          case class Outer(inner: Inner)
+          val o = Outer(Inner("s"))
+          "quote(lift(o).inner)" mustNot compile
+        }
       }
     }
 

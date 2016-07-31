@@ -30,6 +30,7 @@ trait Parsing extends EntityConfigParsing {
   }
 
   val astParser: Parser[Ast] = Parser[Ast] {
+    case `caseClassLiftParser`(value)       => value
     case `liftParser`(value)                => value
     case `valParser`(value)                 => value
     case `patMatchValParser`(value)         => value
@@ -98,8 +99,15 @@ trait Parsing extends EntityConfigParsing {
     case q"if($a) $b else $c" => If(astParser(a), astParser(b), astParser(c))
   }
 
+  val caseClassLiftParser: Parser[CaseClassLift] = Parser[CaseClassLift] {
+    case q"$pack.liftCaseClass[$t]($value)" => CaseClassLift(value)
+  }
+
   val liftParser: Parser[Lift] = Parser[Lift] {
     case q"$pack.lift[$t]($value, $encoder)" => Lift(value.toString, value, encoder)
+
+    // Unused, it's here only to make eclipse's presentation compiler happy :(
+    case q"$pack.lift[$t]($value)"           => Lift(value.toString, value, q"null")
   }
 
   val quotedAstParser: Parser[Ast] = Parser[Ast] {
@@ -286,8 +294,7 @@ trait Parsing extends EntityConfigParsing {
   }
 
   private def operationParser(cond: Tree => Boolean)(
-    f: PartialFunction[String, Operator]
-  ): Parser[Operation] = {
+    f: PartialFunction[String, Operator]): Parser[Operation] = {
     object operator {
       def unapply(t: TermName) =
         f.lift(t.decodedName.toString)

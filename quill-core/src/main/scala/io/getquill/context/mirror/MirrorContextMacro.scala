@@ -8,6 +8,7 @@ import io.getquill.context.ContextMacro
 import io.getquill.norm.Normalize
 import io.getquill.quotation.IsDynamic
 import io.getquill.util.Messages.RichContext
+import io.getquill.MirrorContext
 
 class MirrorContextMacro(val c: MacroContext) extends ContextMacro {
   import c.universe.{ Ident => _, _ }
@@ -20,15 +21,15 @@ class MirrorContextMacro(val c: MacroContext) extends ContextMacro {
         }.headOption
 
         val liftings = CollectAst(ast) {
-          case l: Lift => l
+          case Lift(_, value: Tree, encoder: Tree) => (value, encoder)
         }
 
         val normalized = Normalize(ast)
 
-        //        probeQuery[MirrorContext](_.probe(normalized))
+        probeQuery[MirrorContext](_.probe(normalized))
         c.info(normalized.toString)
 
-        q"($normalized, List(..$liftings), $returning)"
+        q"($normalized, List(..$liftings).asInstanceOf[List[(Any, ${c.prefix}.Encoder[Any])]], $returning)"
       case true =>
         q"""
           import io.getquill.norm._

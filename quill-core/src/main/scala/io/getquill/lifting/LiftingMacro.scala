@@ -3,18 +3,28 @@ package io.getquill.lifting
 import io.getquill.util.Messages._
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
 
-class LiftingMacro(val c: MacroContext) {
+trait LiftingMacro {
+  val c: MacroContext
   import c.universe._
+  
+  def lift[T](v: Expr[T])(implicit t: WeakTypeTag[T]): Tree =
+    liftTree(v.tree)
 
-  def lift[T](v: Expr[T])(implicit t: WeakTypeTag[T]): Tree = {
+  protected def liftTree[T](v: Tree)(implicit t: WeakTypeTag[T]): Tree = {
     regularEncoder[T]
       .orElse(anyValEncoder[T]) match {
-        case None      => c.fail(s"Can't find encoder for type '${t.tpe}'")
         case Some(enc) => q"${c.prefix}.lift($v, $enc)"
+        case None      => 
+          t.tpe.baseType(c.symbolOf[Product]) match {
+            case NoType => 
+              c.fail(s"Can't find encoder for type '${t.tpe}'")
+            case _ =>
+              q"${c.prefix}.liftCaseClass($v)"
+          }
       }
   }
 
-  def regularEncoder[T](implicit t: WeakTypeTag[T]): Option[Tree] =
+  private def regularEncoder[T](implicit t: WeakTypeTag[T]): Option[Tree] =
     c.typecheck(
       q"implicitly[${c.prefix}.Encoder[$t]]",
       silent = true) match {
@@ -22,10 +32,10 @@ class LiftingMacro(val c: MacroContext) {
         case tree      => Some(tree)
       }
 
-  def anyValEncoder[T](implicit t: WeakTypeTag[T]): Option[Tree] =
+  private def anyValEncoder[T](implicit t: WeakTypeTag[T]): Option[Tree] =
     t.tpe.baseType(c.symbolOf[AnyVal]) match {
-      case false => None
-      case true =>
+      case NoType => None
+      case _ =>
         caseClassConstructor(t.tpe).map(_.paramLists.flatten).collect {
           case param :: Nil =>
             regularEncoder(c.WeakTypeTag(param.typeSignature)) match {

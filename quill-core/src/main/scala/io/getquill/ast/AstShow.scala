@@ -23,6 +23,7 @@ object AstShow {
     case ast: Ordering        => ast.show
     case q: QuotedReference   => q.ast.show
     case ast: Lift            => ast.show
+    case ast: CaseClassLift            => ast.show
   }
 
   implicit val ifShow: Show[If] = Show[If] {
@@ -31,6 +32,10 @@ object AstShow {
 
   implicit val dynamicShow: Show[Dynamic] = Show[Dynamic] {
     case Dynamic(tree) => tree.toString
+  }
+  
+  implicit val caseClassLiftShow: Show[CaseClassLift] = Show[CaseClassLift] {
+    case CaseClassLift(a) => s"liftCaseClass($a)"
   }
 
   implicit val liftShow: Show[Lift] = Show[Lift] {

@@ -18,6 +18,7 @@ trait Liftables {
     case ast: Ident => identLiftable(ast)
     case ast: Ordering => orderingLiftable(ast)
     case ast: Lift => liftLiftable(ast)
+    case ast: CaseClassLift => caseClassLiftLiftable(ast)
     case Val(name, body) => q"$pack.Val($name, $body)"
     case Block(statements) => q"$pack.Block($statements)"
     case Property(a, b) => q"$pack.Property($a, $b)"
@@ -138,6 +139,10 @@ trait Liftables {
   }
   implicit val identLiftable: Liftable[Ident] = Liftable[Ident] {
     case Ident(a) => q"$pack.Ident($a)"
+  }
+  
+  implicit val caseClassLiftLiftable: Liftable[CaseClassLift] = Liftable[CaseClassLift] {
+    case CaseClassLift(a: Tree) => q"$pack.CaseClassLift($a)"
   }
 
   implicit val liftLiftable: Liftable[Lift] = Liftable[Lift] {

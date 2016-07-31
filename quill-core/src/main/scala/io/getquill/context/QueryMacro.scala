@@ -35,14 +35,14 @@ trait QueryMacro extends SelectFlattening with SelectResultExtraction {
     q"""
     {
       val quoted = $quotedTree
-      val (sql, liftings: List[io.getquill.ast.Lift], _) =
+      val (sql, liftings, _) =
           ${prepare(flattenQuery)}
           
       val bind =
         (row: $r) => 
           (liftings.foldLeft((0, row)) {
-            case ((idx, row), lift) =>
-              (idx + 1, lift.encoder(idx, lift.value, row))
+            case ((idx, row), (value, encoder)) =>
+              (idx + 1, encoder(idx, value, row))
           })._2
 
       ${c.prefix}.$queryMethod(

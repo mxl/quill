@@ -10,6 +10,7 @@ trait Unliftables {
   import c.universe.{ Ident => _, Constant => _, Function => _, If => _, _ }
 
   implicit val astUnliftable: Unliftable[Ast] = Unliftable[Ast] {
+    case caseClassLiftUnliftable(ast) => ast
     case liftUnliftable(ast) => ast
     case queryUnliftable(ast) => ast
     case actionUnliftable(ast) => ast
@@ -150,6 +151,11 @@ trait Unliftables {
   implicit val identUnliftable: Unliftable[Ident] = Unliftable[Ident] {
     case q"$pack.Ident.apply(${ a: String })" => Ident(a)
   }
+  
+  implicit val caseClassLiftUnliftable: Unliftable[CaseClassLift] = Unliftable[CaseClassLift] {
+    case q"$pack.CaseClassLift.apply($a)" => CaseClassLift(a)
+  }
+  
   implicit val liftUnliftable: Unliftable[Lift] = Unliftable[Lift] {
     case q"$pack.Lift.apply(${ a: String }, $b, $c)" => Lift(a, b, c)
   }
