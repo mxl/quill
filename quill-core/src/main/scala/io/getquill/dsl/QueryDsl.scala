@@ -65,10 +65,10 @@ private[dsl] trait QueryDsl {
 
     def insert(value: T): Insert[T, Long] = macro macroz.DslMacro.expandInsert[T]
     def insert(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Insert[T, Long]
-    
+
     def update(value: T): Update[T, Long] = macro macroz.DslMacro.expandUpdate[T]
     def update(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Update[T, Long]
-    
+
     def delete: Delete[T, Long]
   }
 
@@ -85,6 +85,4 @@ private[dsl] trait QueryDsl {
   }
   sealed trait Update[T, O] extends Action[T, O]
   sealed trait Delete[T, O] extends Action[T, O]
-
-  sealed trait UnassignedAction[T, O] extends Action[T, O]
 }

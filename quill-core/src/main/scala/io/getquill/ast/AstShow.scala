@@ -39,7 +39,7 @@ object AstShow {
   }
 
   implicit val liftShow: Show[Lift] = Show[Lift] {
-    case Lift(a, b, c) => s"lift($b)($c)"
+    case Lift(a, b, c) => s"lift($b)"
   }
 
   implicit val blockShow: Show[Block] = Show[Block] {

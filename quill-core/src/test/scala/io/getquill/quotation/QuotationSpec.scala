@@ -90,7 +90,7 @@ class QuotationSpec extends Spec {
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
-            query[TestEntity].schema(_.columns(e => Predef.ArrowAssoc(e.s).->[String]("theS")))
+            query[TestEntity].schema(_.columns(e => Predef.ArrowAssoc(e.s). -> [String]("theS")))
           }
           quote(unquote(q)).ast mustEqual ConfiguredEntity(Entity("TestEntity"), properties = List(PropertyAlias("s", "theS")))
         }
@@ -339,13 +339,14 @@ class QuotationSpec extends Spec {
                 v => v.s -> t.s,
                 v => v.i -> t.i,
                 v => v.l -> t.l,
-                v => v.o -> t.o)
+                v => v.o -> t.o
+              )
           }
           quote(unquote(q)).ast mustEqual n.ast
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
-            qr1.update(t => Predef.ArrowAssoc(t.s).->[String]("s"))
+            qr1.update(t => Predef.ArrowAssoc(t.s). -> [String]("s"))
           }
           quote(unquote(q)).ast mustEqual Update(Entity("TestEntity"), List(Assignment(Ident("t"), "s", Constant("s"))))
         }
@@ -373,7 +374,8 @@ class QuotationSpec extends Spec {
                 v => v.s -> t.s,
                 v => v.i -> t.i,
                 v => v.l -> t.l,
-                v => v.o -> t.o)
+                v => v.o -> t.o
+              )
           }
           quote(unquote(q)).ast mustEqual n.ast
         }
@@ -415,7 +417,7 @@ class QuotationSpec extends Spec {
             quote(unquote(q)).ast mustEqual Tuple(List(Tuple(List(Constant(1), Constant("a"))), Constant("b")))
           }
           "explicit `Predef.ArrowAssoc`" in {
-            val q = quote(Predef.ArrowAssoc("a").->[String]("b"))
+            val q = quote(Predef.ArrowAssoc("a"). -> [String]("b"))
             quote(unquote(q)).ast mustEqual Tuple(List(Constant("a"), Constant("b")))
           }
         }
@@ -871,6 +873,13 @@ class QuotationSpec extends Spec {
     import language.reflectiveCalls
 
     "retains liftings" - {
+      "constant" in {
+        val q = quote(lift(1))
+
+        val l = q.liftings.`1`
+        l.value mustEqual 1
+        l.encoder mustEqual intEncoder
+      }
       "identifier" in {
         val i = 1
         val q = quote(lift(i))
@@ -929,7 +938,14 @@ class QuotationSpec extends Spec {
         l3.value mustEqual c
         l3.encoder mustEqual floatEncoder
       }
+      "nested lifted constant" in {
+        val q1 = quote(lift(1))
+        val q2 = quote(q1 + 1)
 
+        val l = q2.liftings.`q1.1`
+        l.value mustEqual 1
+        l.encoder mustEqual intEncoder
+      }
       "merges properties into the case class lifting" - {
         val t = TestEntity("s", 1, 2L, Some(3))
         "direct access" in {
@@ -1038,9 +1054,11 @@ class QuotationSpec extends Spec {
           BinaryOperation(
             Property(Property(Ident("t"), "_1"), "_1"),
             NumericOperator.`+`,
-            Property(Property(Ident("t"), "_1"), "_2")),
+            Property(Property(Ident("t"), "_1"), "_2")
+          ),
           NumericOperator.`+`,
-          Property(Ident("t"), "_2"))
+          Property(Ident("t"), "_2")
+        )
     }
   }
 

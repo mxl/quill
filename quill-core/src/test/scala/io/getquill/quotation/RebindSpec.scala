@@ -1,12 +1,7 @@
 //package io.getquill.quotation
 //
 //import io.getquill.Spec
-//import io.getquill.testContext.Action
-//import io.getquill.testContext.InfixInterpolator
-//import io.getquill.testContext.TestEntity
-//import io.getquill.testContext.query
-//import io.getquill.testContext.quote
-//import io.getquill.testContext.unquote
+//import io.getquill.testContext._
 //import io.getquill.testContext
 //
 //class RebindSpec extends Spec {
@@ -16,20 +11,20 @@
 //      implicit class ReturnId[T, O](action: Action[T, O]) {
 //        def returnId[ID] = quote(infix"$action RETURNING ID".as[Action[T, ID]])
 //      }
-//      val q = quote { (i: Int) =>
-//        unquote(query[TestEntity].insert(e => e.i -> i).returnId[Long])
+//      val q = quote {
+//        unquote(query[TestEntity].insert(e => e.i -> lift(1)).returnId[Long])
 //      }
-//      testContext.run(q)(List(1)).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> p1)} RETURNING ID\"")
+//      testContext.run(q).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> p1)} RETURNING ID\"")
 //    }
 //
 //    "with no type param" in {
 //      implicit class ReturnId[T, O](action: Action[T, O]) {
 //        def returnId = quote(infix"$action RETURNING ID".as[Action[T, Long]])
 //      }
-//      val q = quote { (i: Int) =>
-//        unquote(query[TestEntity].insert(e => e.i -> i).returnId)
+//      val q = quote {
+//        unquote(query[TestEntity].insert(e => e.i -> lift(1)).returnId)
 //      }
-//      testContext.run(q)(List(1)).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> p1)} RETURNING ID\"")
+//      testContext.run(q).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> p1)} RETURNING ID\"")
 //    }
 //  }
 //

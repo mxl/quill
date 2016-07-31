@@ -1,8 +1,8 @@
 package io.getquill.dsl.macroz
 import io.getquill.util.Messages._
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
-import scala.reflect.macros.whitebox.{Context => MacroContext}
-import scala.reflect.macros.whitebox.{Context => MacroContext}
+import scala.reflect.macros.whitebox.{ Context => MacroContext }
+import scala.reflect.macros.whitebox.{ Context => MacroContext }
 
 trait LiftingMacro {
   val c: MacroContext

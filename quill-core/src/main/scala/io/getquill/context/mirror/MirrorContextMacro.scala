@@ -42,12 +42,12 @@ class MirrorContextMacro(val c: MacroContext) extends ContextMacro {
           }.headOption
           
           val liftings = CollectAst(ast) {
-            case l: Lift => l
+            case Lift(_, value, encoder) => (value, encoder)
           }
 
           val normalized = Normalize(ast)
 
-          (normalized, liftings, returning)
+          (normalized, liftings.asInstanceOf[List[(Any, ${c.prefix}.Encoder[Any])]], returning)
         """
     }
 }

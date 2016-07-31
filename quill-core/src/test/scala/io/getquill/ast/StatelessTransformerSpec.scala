@@ -178,11 +178,13 @@ class StatelessTransformerSpec extends Spec {
     "block" in {
       val ast: Ast = Block(List(
         Val(Ident("a"), Entity("a")),
-        Val(Ident("b"), Entity("b"))))
+        Val(Ident("b"), Entity("b"))
+      ))
       Subject(Entity("a") -> Entity("b"), Entity("b") -> Entity("c"))(ast) mustEqual
         Block(List(
           Val(Ident("a"), Entity("b")),
-          Val(Ident("b"), Entity("c"))))
+          Val(Ident("b"), Entity("c"))
+        ))
     }
 
     "val" in {
