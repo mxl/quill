@@ -1,12 +1,13 @@
-package io.getquill.lifting
-
+package io.getquill.dsl.macroz
 import io.getquill.util.Messages._
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
+import scala.reflect.macros.whitebox.{Context => MacroContext}
+import scala.reflect.macros.whitebox.{Context => MacroContext}
 
 trait LiftingMacro {
   val c: MacroContext
   import c.universe._
-  
+
   def lift[T](v: Expr[T])(implicit t: WeakTypeTag[T]): Tree =
     liftTree(v.tree)
 
@@ -14,9 +15,9 @@ trait LiftingMacro {
     regularEncoder[T]
       .orElse(anyValEncoder[T]) match {
         case Some(enc) => q"${c.prefix}.lift($v, $enc)"
-        case None      => 
+        case None =>
           t.tpe.baseType(c.symbolOf[Product]) match {
-            case NoType => 
+            case NoType =>
               c.fail(s"Can't find encoder for type '${t.tpe}'")
             case _ =>
               q"${c.prefix}.liftCaseClass($v)"
@@ -27,7 +28,8 @@ trait LiftingMacro {
   private def regularEncoder[T](implicit t: WeakTypeTag[T]): Option[Tree] =
     c.typecheck(
       q"implicitly[${c.prefix}.Encoder[$t]]",
-      silent = true) match {
+      silent = true
+    ) match {
         case EmptyTree => None
         case tree      => Some(tree)
       }

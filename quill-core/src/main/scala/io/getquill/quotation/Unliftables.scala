@@ -131,11 +131,10 @@ trait Unliftables {
   }
 
   implicit val actionUnliftable: Unliftable[Action] = Unliftable[Action] {
-    case q"$pack.AssignedAction.apply(${ a: Ast }, ${ b: List[Assignment] })" => AssignedAction(a, b)
-    case q"$pack.Update.apply(${ a: Ast })"                                   => Update(a)
-    case q"$pack.Insert.apply(${ a: Ast })"                                   => Insert(a)
-    case q"$pack.Delete.apply(${ a: Ast })"                                   => Delete(a)
-    case q"$pack.Returning.apply(${ a: Ast }, ${ b: String })"                => Returning(a, b)
+    case q"$pack.Update.apply(${ a: Ast }, ${ b: List[Assignment] })" => Update(a, b)
+    case q"$pack.Insert.apply(${ a: Ast }, ${ b: List[Assignment] })" => Insert(a, b)
+    case q"$pack.Delete.apply(${ a: Ast })"                           => Delete(a)
+    case q"$pack.Returning.apply(${ a: Ast }, ${ b: String })"        => Returning(a, b)
   }
 
   implicit val assignmentUnliftable: Unliftable[Assignment] = Unliftable[Assignment] {
@@ -151,11 +150,11 @@ trait Unliftables {
   implicit val identUnliftable: Unliftable[Ident] = Unliftable[Ident] {
     case q"$pack.Ident.apply(${ a: String })" => Ident(a)
   }
-  
+
   implicit val caseClassLiftUnliftable: Unliftable[CaseClassLift] = Unliftable[CaseClassLift] {
     case q"$pack.CaseClassLift.apply($a)" => CaseClassLift(a)
   }
-  
+
   implicit val liftUnliftable: Unliftable[Lift] = Unliftable[Lift] {
     case q"$pack.Lift.apply(${ a: String }, $b, $c)" => Lift(a, b, c)
   }

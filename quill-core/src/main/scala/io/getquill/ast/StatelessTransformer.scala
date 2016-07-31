@@ -17,7 +17,7 @@ trait StatelessTransformer {
       case If(a, b, c)                 => If(apply(a), apply(b), apply(c))
       case e: Dynamic                  => e
       case e: Lift                     => e
-      case e: CaseClassLift                     => e
+      case e: CaseClassLift            => e
       case e: QuotedReference          => e
       case Block(statements)           => Block(statements.map(apply))
       case Val(name, body)             => Val(name, apply(body))
@@ -59,11 +59,10 @@ trait StatelessTransformer {
 
   def apply(e: Action): Action =
     e match {
-      case AssignedAction(action, assignments) => AssignedAction(apply(action), assignments.map(apply))
-      case Update(query)                       => Update(apply(query))
-      case Insert(query)                       => Insert(apply(query))
-      case Delete(query)                       => Delete(apply(query))
-      case Returning(query, property)          => Returning(apply(query), property)
+      case Update(query, assignments) => Update(apply(query), assignments.map(apply))
+      case Insert(query, assignments) => Insert(apply(query), assignments.map(apply))
+      case Delete(query)              => Delete(apply(query))
+      case Returning(query, property) => Returning(apply(query), property)
     }
 
   private def apply(e: Assignment): Assignment =

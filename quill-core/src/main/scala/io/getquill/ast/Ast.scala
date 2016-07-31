@@ -117,11 +117,9 @@ case class Val(name: Ident, body: Ast) extends Ast
 
 sealed trait Action extends Ast
 
-case class Update(query: Ast) extends Action
-case class Insert(query: Ast) extends Action
+case class Update(query: Ast, assignments: List[Assignment]) extends Action
+case class Insert(query: Ast, assignments: List[Assignment]) extends Action
 case class Delete(query: Ast) extends Action
-
-case class AssignedAction(action: Ast, assignments: List[Assignment]) extends Action
 
 case class Returning(action: Ast, property: String) extends Action
 

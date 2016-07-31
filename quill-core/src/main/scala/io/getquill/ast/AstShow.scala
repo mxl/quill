@@ -23,7 +23,7 @@ object AstShow {
     case ast: Ordering        => ast.show
     case q: QuotedReference   => q.ast.show
     case ast: Lift            => ast.show
-    case ast: CaseClassLift            => ast.show
+    case ast: CaseClassLift   => ast.show
   }
 
   implicit val ifShow: Show[If] = Show[If] {
@@ -33,7 +33,7 @@ object AstShow {
   implicit val dynamicShow: Show[Dynamic] = Show[Dynamic] {
     case Dynamic(tree) => tree.toString
   }
-  
+
   implicit val caseClassLiftShow: Show[CaseClassLift] = Show[CaseClassLift] {
     case CaseClassLift(a) => s"liftCaseClass($a)"
   }
@@ -161,11 +161,10 @@ object AstShow {
   }
 
   implicit val actionShow: Show[Action] = Show[Action] {
-    case AssignedAction(action, assignments) => s"${action.show}(${assignments.show})"
-    case Update(query)                       => s"${query.show}.update"
-    case Insert(query)                       => s"${query.show}.insert"
-    case Delete(query)                       => s"${query.show}.delete"
-    case Returning(query, property)          => s"${query.show}.returning(_.$property)"
+    case Update(query, assignments) => s"${query.show}.update(${assignments.show})"
+    case Insert(query, assignments) => s"${query.show}.insert(${assignments.show})"
+    case Delete(query)              => s"${query.show}.delete"
+    case Returning(query, property) => s"${query.show}.returning(_.$property)"
   }
 
   implicit val assignmentShow: Show[Assignment] = Show[Assignment] {

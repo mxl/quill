@@ -392,13 +392,9 @@ trait Parsing extends EntityConfigParsing {
 
   val actionParser: Parser[Ast] = Parser[Ast] {
     case q"$query.$method(..$assignments)" if (method.decodedName.toString == "update") =>
-      AssignedAction(Update(astParser(query)), assignments.map(assignmentParser(_)))
+      Update(astParser(query), assignments.map(assignmentParser(_)))
     case q"$query.insert(..$assignments)" =>
-      AssignedAction(Insert(astParser(query)), assignments.map(assignmentParser(_)))
-    case q"$query.$method" if (method.decodedName.toString == "update") =>
-      Function(List(Ident("x1")), Update(astParser(query)))
-    case q"$query.insert" =>
-      Function(List(Ident("x1")), Insert(astParser(query)))
+      Insert(astParser(query), assignments.map(assignmentParser(_)))
     case q"$query.delete" =>
       Delete(astParser(query))
     case q"$pack.InsertAssignedAction[$t]($query).returning[$r](($alias) => $e.$property)" =>
@@ -410,6 +406,9 @@ trait Parsing extends EntityConfigParsing {
   private val assignmentParser: Parser[Assignment] = Parser[Assignment] {
     case q"((${ identParser(i1) }) => $pack.Predef.ArrowAssoc[$t](${ identParser(i2) }.$prop).$arrow[$v]($value))" if (i1 == i2) =>
       Assignment(i1, prop.decodedName.toString, astParser(value))
+
+    // Unused, it's here only to make eclipse's presentation compiler happy
+    case astParser(ast) => Assignment(Ident("unused"), "unused", Constant("unused"))
   }
 
 }

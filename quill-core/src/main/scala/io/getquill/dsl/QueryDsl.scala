@@ -1,5 +1,6 @@
 package io.getquill.dsl
 
+import scala.language.experimental.macros
 import scala.reflect.ClassTag
 
 import io.getquill.quotation.NonQuotedException
@@ -62,21 +63,13 @@ private[dsl] trait QueryDsl {
     override def filter(f: T => Boolean): EntityQuery[T]
     override def map[R](f: T => R): EntityQuery[R]
 
-    def insert: T => UnassignedAction[T, Long] with Insert[T, Long]
+    def insert(value: T): Insert[T, Long] = macro macroz.DslMacro.expandInsert[T]
     def insert(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Insert[T, Long]
-    def update: T => UnassignedAction[T, Long] with Update[T, Long]
+    
+    def update(value: T): Update[T, Long] = macro macroz.DslMacro.expandUpdate[T]
     def update(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Update[T, Long]
+    
     def delete: Delete[T, Long]
-  }
-
-  implicit class InsertUnassignedAction[T](i: T => UnassignedAction[T, _] with Insert[T, _]) {
-    @compileTimeOnly(NonQuotedException.message)
-    def returning[R](f: T => R): T => UnassignedAction[T, R] with Insert[T, R] = NonQuotedException()
-  }
-
-  implicit class InsertAssignedAction[T](i: Insert[T, _]) {
-    @compileTimeOnly(NonQuotedException.message)
-    def returning[R](f: T => R): Insert[T, R] = NonQuotedException()
   }
 
   sealed trait Schema[T] {
@@ -86,7 +79,10 @@ private[dsl] trait QueryDsl {
 
   sealed trait Action[T, O]
 
-  sealed trait Insert[T, O] extends Action[T, O]
+  sealed trait Insert[T, O] extends Action[T, O] {
+    @compileTimeOnly(NonQuotedException.message)
+    def returning[R](f: T => R): Insert[T, R] = NonQuotedException()
+  }
   sealed trait Update[T, O] extends Action[T, O]
   sealed trait Delete[T, O] extends Action[T, O]
 

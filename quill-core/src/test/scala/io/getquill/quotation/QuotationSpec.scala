@@ -12,7 +12,6 @@ import io.getquill.ast.AggregationOperator
 import io.getquill.ast.Asc
 import io.getquill.ast.AscNullsFirst
 import io.getquill.ast.AscNullsLast
-import io.getquill.ast.AssignedAction
 import io.getquill.ast.Assignment
 import io.getquill.ast.Ast
 import io.getquill.ast.BinaryOperation
@@ -318,29 +317,37 @@ class QuotationSpec extends Spec {
     }
     "action" - {
       "update" - {
-        "assigned" in {
+        "field" in {
           val q = quote {
             qr1.update(t => t.s -> "s")
           }
-          quote(unquote(q)).ast mustEqual AssignedAction(Update(Entity("TestEntity")), List(Assignment(Ident("t"), "s", Constant("s"))))
+          quote(unquote(q)).ast mustEqual Update(Entity("TestEntity"), List(Assignment(Ident("t"), "s", Constant("s"))))
         }
-        "assigned using entity property" in {
+        "set field using another field" in {
           val q = quote {
             qr1.update(t => t.i -> (t.i + 1))
           }
-          quote(unquote(q)).ast mustEqual AssignedAction(Update(Entity("TestEntity")), List(Assignment(Ident("t"), "i", BinaryOperation(Property(Ident("t"), "i"), NumericOperator.`+`, Constant(1)))))
+          quote(unquote(q)).ast mustEqual Update(Entity("TestEntity"), List(Assignment(Ident("t"), "i", BinaryOperation(Property(Ident("t"), "i"), NumericOperator.`+`, Constant(1)))))
         }
-        "unassigned" in {
+        "case class" in {
           val q = quote {
-            qr1.update
+            (t: TestEntity) => qr1.update(t)
           }
-          quote(unquote(q)).ast mustEqual Function(List(Ident("x1")), Update(Entity("TestEntity")))
+          val n = quote {
+            (t: TestEntity) =>
+              qr1.update(
+                v => v.s -> t.s,
+                v => v.i -> t.i,
+                v => v.l -> t.l,
+                v => v.o -> t.o)
+          }
+          quote(unquote(q)).ast mustEqual n.ast
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
             qr1.update(t => Predef.ArrowAssoc(t.s).->[String]("s"))
           }
-          quote(unquote(q)).ast mustEqual AssignedAction(Update(Entity("TestEntity")), List(Assignment(Ident("t"), "s", Constant("s"))))
+          quote(unquote(q)).ast mustEqual Update(Entity("TestEntity"), List(Assignment(Ident("t"), "s", Constant("s"))))
         }
         "unicode arrow must compile" in {
           """|quote {
@@ -350,17 +357,25 @@ class QuotationSpec extends Spec {
         }
       }
       "insert" - {
-        "assigned" in {
+        "field" in {
           val q = quote {
             qr1.insert(t => t.s -> "s")
           }
-          quote(unquote(q)).ast mustEqual AssignedAction(Insert(Entity("TestEntity")), List(Assignment(Ident("t"), "s", Constant("s"))))
+          quote(unquote(q)).ast mustEqual Insert(Entity("TestEntity"), List(Assignment(Ident("t"), "s", Constant("s"))))
         }
-        "unassigned" in {
+        "case class" in {
           val q = quote {
-            qr1.insert
+            (t: TestEntity) => qr1.insert(t)
           }
-          quote(unquote(q)).ast mustEqual Function(List(Ident("x1")), Insert(Entity("TestEntity")))
+          val n = quote {
+            (t: TestEntity) =>
+              qr1.insert(
+                v => v.s -> t.s,
+                v => v.i -> t.i,
+                v => v.l -> t.l,
+                v => v.o -> t.o)
+          }
+          quote(unquote(q)).ast mustEqual n.ast
         }
         "unicode arrow must compile" in {
           """|quote {
@@ -936,6 +951,45 @@ class QuotationSpec extends Spec {
           val l = q.liftings.`t.s`
           l.value mustEqual t.s
           l.encoder mustEqual stringEncoder
+        }
+        "action" in {
+          val q = quote {
+            query[TestEntity].insert(lift(t))
+          }
+          val l1 = q.liftings.`t.s`
+          l1.value mustEqual t.s
+          l1.encoder mustEqual stringEncoder
+
+          val l2 = q.liftings.`t.i`
+          l2.value mustEqual t.i
+          l2.encoder mustEqual intEncoder
+
+          val l3 = q.liftings.`t.l`
+          l3.value mustEqual t.l
+          l3.encoder mustEqual longEncoder
+
+          q.liftings.`t.o`.value mustEqual t.o
+        }
+        "action + beta reduction" in {
+          val n = quote {
+            (t: TestEntity) => query[TestEntity].update(t)
+          }
+          val q = quote {
+            n(lift(t))
+          }
+          val l1 = q.liftings.`t.s`
+          l1.value mustEqual t.s
+          l1.encoder mustEqual stringEncoder
+
+          val l2 = q.liftings.`t.i`
+          l2.value mustEqual t.i
+          l2.encoder mustEqual intEncoder
+
+          val l3 = q.liftings.`t.l`
+          l3.value mustEqual t.l
+          l3.encoder mustEqual longEncoder
+
+          q.liftings.`t.o`.value mustEqual t.o
         }
         "invalid nested case class" in {
           case class Inner(s: String)

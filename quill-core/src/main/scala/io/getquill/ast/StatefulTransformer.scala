@@ -36,11 +36,11 @@ trait StatefulTransformer[T] {
         val (ct, ctt) = btt.apply(c)
         (If(at, bt, ct), ctt)
 
-      case l: Dynamic => (l, this)
+      case l: Dynamic       => (l, this)
 
-      case l: Lift    => (l, this)
-      
-      case l: CaseClassLift    => (l, this)
+      case l: Lift          => (l, this)
+
+      case l: CaseClassLift => (l, this)
 
       case QuotedReference(a, b) =>
         val (bt, btt) = apply(b)
@@ -141,16 +141,14 @@ trait StatefulTransformer[T] {
 
   def apply(e: Action): (Action, StatefulTransformer[T]) =
     e match {
-      case AssignedAction(a, b) =>
+      case Insert(a, b) =>
         val (at, att) = apply(a)
         val (bt, btt) = att.apply(b)(_.apply)
-        (AssignedAction(at, bt), btt)
-      case Update(a) =>
+        (Insert(at, bt), btt)
+      case Update(a, b) =>
         val (at, att) = apply(a)
-        (Update(at), att)
-      case Insert(a) =>
-        val (at, att) = apply(a)
-        (Insert(at), att)
+        val (bt, btt) = att.apply(b)(_.apply)
+        (Update(at, bt), btt)
       case Delete(a) =>
         val (at, att) = apply(a)
         (Delete(at), att)
