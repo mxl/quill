@@ -63,8 +63,8 @@ private[dsl] trait QueryDsl {
     override def filter(f: T => Boolean): EntityQuery[T]
     override def map[R](f: T => R): EntityQuery[R]
 
-    def insert(value: T): Insert[T, Long] = macro macroz.DslMacro.expandInsert[T]
-    def insert(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Insert[T, Long]
+    def insert(value: T): Insert[T] = macro macroz.DslMacro.expandInsert[T]
+    def insert(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Insert[T]
 
     def update(value: T): Update[T, Long] = macro macroz.DslMacro.expandUpdate[T]
     def update(f: (T => (Any, Any)), f2: (T => (Any, Any))*): Update[T, Long]
@@ -77,12 +77,13 @@ private[dsl] trait QueryDsl {
     def columns(propertyAlias: (T => (Any, String))*): Schema[T]
   }
 
-  sealed trait Action[T, O]
+  sealed trait Action[T]
 
-  sealed trait Insert[T, O] extends Action[T, O] {
+  sealed trait Insert[T] extends Action[T] {
     @compileTimeOnly(NonQuotedException.message)
-    def returning[R](f: T => R): Insert[T, R] = NonQuotedException()
+    def returning[R](f: T => R): Returning[T, R] = NonQuotedException()
   }
-  sealed trait Update[T, O] extends Action[T, O]
-  sealed trait Delete[T, O] extends Action[T, O]
+  sealed trait Returning[T, O]
+  sealed trait Update[T, O] extends Action[T]
+  sealed trait Delete[T, O] extends Action[T]
 }

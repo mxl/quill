@@ -27,7 +27,8 @@ class MirrorContext
   override def close = ()
 
   def run[T](quoted: Quoted[Query[T]]): QueryMirror[T] = macro MirrorContextMacro.run[Row, Row]
-  def run[T, O](quoted: Quoted[Action[T, O]]): ActionMirror = macro MirrorContextMacro.run[Row, Row]
+  def run[T](quoted: Quoted[Action[T]]): ActionMirror = macro MirrorContextMacro.run[Row, Row]
+  def run[T, O](quoted: Quoted[Returning[T, O]]): ActionMirror = macro MirrorContextMacro.run[Row, Row]
   def run[T](quoted: Quoted[T]): QueryMirror[T] = macro MirrorContextMacro.run[Row, Row]
 
   def probe(ast: Ast) =

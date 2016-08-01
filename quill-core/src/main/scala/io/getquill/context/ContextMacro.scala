@@ -40,7 +40,7 @@ trait ContextMacro extends Quotation with ActionMacro with QueryMacro with Query
 
   private def run[R, S, T](quotedTree: Tree, ast: Ast, returnList: Boolean)(implicit r: WeakTypeTag[R], s: WeakTypeTag[S], t: WeakTypeTag[T]): Tree =
     ast match {
-      case ast if ((t.tpe.erasure <:< c.weakTypeTag[CoreDsl#Action[Any, Any]].tpe.erasure)) =>
+      case ast if ((t.tpe.erasure <:< c.weakTypeTag[CoreDsl#Action[Any]].tpe.erasure)) =>
         runAction[R, S, T](quotedTree, ast)
 
       case ast =>

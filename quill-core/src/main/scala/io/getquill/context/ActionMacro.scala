@@ -52,6 +52,6 @@ trait ActionMacro extends EncodingMacro {
     selectResultExtractor[R](selectValues)
   }
 
-  private def returningType(tpe: Type): Type = tpe.baseType(c.typeOf[CoreDsl#Action[_, _]].typeSymbol).typeArgs(1)
+  private def returningType(tpe: Type): Type = tpe.baseType(c.typeOf[CoreDsl#Action[_]].typeSymbol).typeArgs(1)
 
 }

@@ -121,7 +121,6 @@ case class Update(query: Ast, assignments: List[Assignment]) extends Action
 case class Insert(query: Ast, assignments: List[Assignment]) extends Action
 case class Delete(query: Ast) extends Action
 
-// TODO Refactor to InsertReturning, calling specific context method
 case class Returning(action: Ast, property: String) extends Action
 
 case class Assignment(input: Ident, property: String, value: Ast)
