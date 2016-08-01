@@ -39,7 +39,6 @@ trait Quotation extends Liftables with Unliftables with Parsing with ReifyLiftin
           }
         }
       """
-            c.info(quotation.toString())
 
     IsDynamic(ast) match {
       case true  => q"$quotation: ${c.prefix}.Quoted[$t]"

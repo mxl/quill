@@ -197,6 +197,7 @@ lazy val commonSettings = ReleasePlugin.extraReleaseCommands ++ Seq(
   unmanagedClasspath in Test ++= Seq(
     baseDirectory.value / "src" / "test" / "resources"
   ),
+  scalacOptions in Test ~= (_.filterNot(_ == "-Ywarn-unused")),
   scalacOptions ++= Seq(
     "-Xfatal-warnings",
     "-deprecation",
@@ -209,6 +210,7 @@ lazy val commonSettings = ReleasePlugin.extraReleaseCommands ++ Seq(
     "-Ywarn-numeric-widen",   
     "-Ywarn-value-discard",
     "-Xfuture",
+    "-Ywarn-unused",
     "-Ywarn-unused-import"
   ),
   concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),

@@ -4,9 +4,7 @@ import scala.reflect.macros.whitebox.{ Context => MacroContext }
 
 import io.getquill.ast.Ast
 import io.getquill.ast.Dynamic
-import io.getquill.ast.Ident
 import io.getquill.dsl.CoreDsl
-import io.getquill.quotation.Bindings
 import io.getquill.quotation.FreeVariables
 import io.getquill.quotation.Quotation
 import io.getquill.util.Messages.RichContext
@@ -40,14 +38,6 @@ trait ContextMacro extends Quotation with ActionMacro with QueryMacro with Query
     run(quoted.tree, ast, returnList)(r, s, t)
   }
 
-  private def bindingsTree(tree: Tree, tpe: Type) = {
-    Bindings(c)(tree, tpe)
-      .map {
-        case (symbol, tree) =>
-          (Ident(symbol.name.decodedName.toString), (symbol.typeSignature.resultType, tree))
-      }.toMap
-  }
-
   private def run[R, S, T](quotedTree: Tree, ast: Ast, returnList: Boolean)(implicit r: WeakTypeTag[R], s: WeakTypeTag[S], t: WeakTypeTag[T]): Tree =
     ast match {
       case ast if ((t.tpe.erasure <:< c.weakTypeTag[CoreDsl#Action[Any, Any]].tpe.erasure)) =>
@@ -67,8 +57,4 @@ trait ContextMacro extends Quotation with ActionMacro with QueryMacro with Query
     unquote[Ast](quoted.tree).getOrElse {
       Dynamic(quoted.tree)
     }
-
-  private def paramsTypes[T](implicit t: WeakTypeTag[T]) =
-    t.tpe.typeArgs.dropRight(1)
-
 }
