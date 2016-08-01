@@ -8,7 +8,7 @@ import io.getquill.norm.BetaReduction
 
 class QueryMacroSpec extends Spec {
 
-  "runs non-binded query" in {
+  "runs query without liftings" in {
     val q = quote {
       qr1.map(_.i)
     }
@@ -16,32 +16,63 @@ class QueryMacroSpec extends Spec {
   }
 
   "runs query with liftings" - {
-    "one" in {
-      val q = quote {
-        qr1.filter(t => t.i == lift(1)).map(t => t.i)
+    "static" - {
+      "one" in {
+        val q = quote {
+          qr1.filter(t => t.i == lift(1)).map(t => t.i)
+        }
+        val r = testContext.run(q)
+        r.ast mustEqual q.ast
+        r.binds mustEqual Row(1)
       }
-      val r = testContext.run(q)
-      r.ast mustEqual q.ast
-      r.binds mustEqual Row(1)
+      "two" in {
+        val q = quote {
+          qr1.filter(t => t.i == lift(1) && t.s == lift("a")).map(t => t.i)
+        }
+        val r = testContext.run(q)
+        r.ast mustEqual q.ast
+        r.binds mustEqual Row(1, "a")
+      }
+      "nested" in {
+        val c = quote {
+          (t: TestEntity) => t.i == lift(1)
+        }
+        val q = quote {
+          qr1.filter(t => c(t) && t.s == lift("a")).map(t => t.i)
+        }
+        val r = testContext.run(q)
+        r.ast mustEqual BetaReduction(q.ast)
+        r.binds mustEqual Row(1, "a")
+      }
     }
-    "two" in {
-      val q = quote {
-        qr1.filter(t => t.i == lift(1) && t.s == lift("a")).map(t => t.i)
+    "dynamic" - {
+      "one" in {
+        val q = quote {
+          qr1.filter(t => t.i == lift(1)).map(t => t.i)
+        }
+        val r = testContext.run(q.dynamic)
+        r.ast mustEqual q.ast
+        r.binds mustEqual Row(1)
       }
-      val r = testContext.run(q)
-      r.ast mustEqual q.ast
-      r.binds mustEqual Row(1, "a")
-    }
-    "nested" in {
-      val c = quote {
-        (t: TestEntity) => t.i == lift(1)
+      "two" in {
+        val q = quote {
+          qr1.filter(t => t.i == lift(1) && t.s == lift("a")).map(t => t.i)
+        }
+        val r = testContext.run(q.dynamic)
+        r.ast mustEqual q.ast
+        r.binds mustEqual Row(1, "a")
       }
-      val q = quote {
-        qr1.filter(t => c(t) && t.s == lift("a")).map(t => t.i)
+      "nested" in {
+        val c = quote {
+          (t: TestEntity) => t.i == lift(1)
+        }
+        val q = quote {
+          qr1.filter(t => c(t) && t.s == lift("a")).map(t => t.i)
+        }
+        val r = testContext.run(q.dynamic)
+        r.ast mustEqual BetaReduction(q.ast)
+        r.binds mustEqual Row(1, "a")
       }
-      val r = testContext.run(q)
-      r.ast mustEqual BetaReduction(q.ast)
-      r.binds mustEqual Row(1, "a")
     }
   }
 }

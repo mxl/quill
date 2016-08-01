@@ -21,14 +21,6 @@ trait ReifyLiftings extends LiftingMacro {
 
   private case class Reified(value: Tree, encoder: Tree)
 
-  private def reflective(tree: Tree) =
-    q"""
-      {
-        import scala.language.reflectiveCalls
-        $tree
-      }  
-    """
-
   private case class ReifyLiftings(state: collection.Map[TermName, Reified])
     extends StatefulTransformer[collection.Map[TermName, Reified]] {
 
@@ -51,8 +43,14 @@ trait ReifyLiftings extends LiftingMacro {
           val newAst =
             Transform(refAst) {
               case Lift(name, value: Tree, encoder: Tree) =>
-                val nested = q"$ref.$liftings.${encode(name)}"
-                Lift(s"$ref.$name", reflective(q"$nested.value"), reflective(q"$nested.encoder"))
+                val nested =
+                  q"""
+                    {
+                      import scala.language.reflectiveCalls
+                      $ref.$liftings.${encode(name)}
+                    }  
+                  """
+                Lift(s"$ref.$name", q"$nested.value", q"$nested.encoder")
             }
           apply(newAst)
 
