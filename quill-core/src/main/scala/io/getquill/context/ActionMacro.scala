@@ -1,57 +1,41 @@
 package io.getquill.context
 
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
-
-import io.getquill.ast.Ast
 import io.getquill.ast.Ident
+import io.getquill.norm.select.SelectResultExtraction
 import io.getquill.dsl.CoreDsl
 
-trait ActionMacro extends EncodingMacro {
-  this: ContextMacro =>
-
-  val c: MacroContext
+class ActionMacro(val c: MacroContext) extends ContextMacro with EncodingMacro with SelectResultExtraction {
   import c.universe.{ Ident => _, _ }
 
-  def runAction[R, S, T](
-    quotedTree: Tree,
-    action:     Ast
-  )(
-    implicit
-    r: WeakTypeTag[R],
-    s: WeakTypeTag[S],
-    t: WeakTypeTag[T]
-  ): Tree =
-    expandedTreeSingle[R](quotedTree, action, returningType(t.tpe))
-
-  private def expandedTreeSingle[R](quotedTree: Tree, action: Ast, returningType: Type)(implicit r: WeakTypeTag[R]) =
-    q"""
-    {
-      val quoted = $quotedTree
-      val (sql, liftings, returning) =
-        ${prepare(action)}
-
-      val bind =
-        (row: $r) => 
-          (liftings.foldLeft((0, row)) {
-            case ((idx, row), (value, encoder)) =>
-              (idx + 1, encoder(idx, value, row))
-          })._2
-
-      ${c.prefix}.executeAction[$returningType](
-        sql,
-        bind,
-        returning,
-        ${returningExtractor(returningType)(r)}
-        )
+  def runAction[Statement](quoted: Tree): Tree =
+    expand[Statement](extractAst(quoted)) {
+      (translated, bind) =>
+        q"""
+          ${c.prefix}.executeAction(
+            $translated.statement,
+            $bind
+          )
+        """
     }
-    """
 
-  private def returningExtractor[R](returnType: c.Type)(implicit r: WeakTypeTag[R]) = {
-    val returnWeakTypeTag = c.WeakTypeTag(returnType)
-    val selectValues = encoding(Ident("X"), Encoding.inferDecoder[R](c))(returnWeakTypeTag)
-    selectResultExtractor[R](selectValues)
+  def runActionReturning[Statement](quoted: Tree): Tree = {
+    val tpe = quotedType(quoted).baseType(c.typeOf[CoreDsl#ActionReturning[_]].typeSymbol).typeArgs.head
+    expand[Statement](extractAst(quoted)) {
+      (translated, bind) =>
+        q"""
+          ${c.prefix}.executeActionReturning(
+            $translated.statement,
+            $bind,
+            ${returningExtractor(tpe)},
+            $translated.returningColumn.get
+          )
+        """
+    }
   }
 
-  private def returningType(tpe: Type): Type = tpe.baseType(c.typeOf[CoreDsl#Action[_]].typeSymbol).typeArgs(1)
-
+  private def returningExtractor(returnType: c.Type) = {
+    val selectValues = encoding(Ident("X"), returnType, Encoding.inferDecoder(c))
+    selectResultExtractor(selectValues)
+  }
 }

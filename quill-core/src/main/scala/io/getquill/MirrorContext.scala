@@ -9,51 +9,50 @@ import io.getquill.context.mirror.MirrorDecoders
 import io.getquill.context.mirror.MirrorEncoders
 import io.getquill.context.mirror.Row
 
-import scala.language.experimental.macros
-import io.getquill.context.mirror.MirrorContextMacro
+import io.getquill.context.mirror.MirrorTranslator
 
 private[getquill] object mirrorWithQueryProbing extends MirrorContextWithQueryProbing
 
 class MirrorContextWithQueryProbing extends MirrorContext with QueryProbing
 
 class MirrorContext
-  extends Context
+  extends Context[Ast]
   with MirrorEncoders
   with MirrorDecoders {
 
   override type PrepareRow = Row
   override type ResultRow = Row
 
+  override type RunQueryResult[T] = QueryMirror[T]
+  override type RunQuerySingleResult[T] = QueryMirror[T]
+  override type RunActionResult[T] = ActionMirror
+  override type RunActionReturningResult[T] = ActionReturningMirror[T]
+
   override def close = ()
 
-  def run[T](quoted: Quoted[Query[T]]): QueryMirror[T] = macro MirrorContextMacro.run[Row, Row]
-  def run[T](quoted: Quoted[Action[T]]): ActionMirror = macro MirrorContextMacro.run[Row, Row]
-  def run[T, O](quoted: Quoted[Returning[T, O]]): ActionMirror = macro MirrorContextMacro.run[Row, Row]
-  def run[T](quoted: Quoted[T]): QueryMirror[T] = macro MirrorContextMacro.run[Row, Row]
-
-  def probe(ast: Ast) =
-    if (ast.toString.contains("Fail"))
+  def probe(statement: Ast) =
+    if (statement.toString.contains("Fail"))
       Failure(new IllegalStateException("The ast contains 'Fail'"))
     else
       Success(())
 
-  case class ActionMirror(ast: Ast, bind: Row, returning: Option[String])
+  override val translator = MirrorTranslator
 
-  def transaction[T](f: MirrorContext => T) = f(this)
+  def transaction[T](f: => T) = f
 
-  def executeAction[O](ast: Ast, bindParams: Row => Row = identity, returning: Option[String] = None, returningExtractor: Row => O = identity[Row] _) =
-    ActionMirror(ast, bindParams(Row()), returning)
+  case class ActionMirror(ast: Ast, prepareRow: PrepareRow)
+  case class ActionReturningMirror[O](ast: Ast, prepareRow: Row, extractor: Row => O, returningColumn: String)
+  case class QueryMirror[T](ast: Ast, prepareRow: Row, extractor: Row => T)
 
-  case class BatchActionMirror(ast: Ast, bindList: List[Row], returning: Option[String])
+  def executeAction(ast: Ast, prepare: Row => Row = identity) =
+    ActionMirror(ast, prepare(Row()))
 
-  def executeActionBatch[T, O](ast: Ast, bindParams: T => Row => Row = (_: T) => identity[Row] _, returning: Option[String] = None, returningExtractor: Row => O = identity[Row] _) =
-    (values: List[T]) =>
-      BatchActionMirror(ast, values.map(bindParams).map(_(Row())), returning)
+  def executeActionReturning[O](ast: Ast, prepare: Row => Row = identity, extractor: Row => O, returningColumn: String) =
+    ActionReturningMirror[O](ast, prepare(Row()), extractor, returningColumn)
 
-  case class QueryMirror[T](ast: Ast, binds: Row, extractor: Row => T)
+  def executeQuery[T](ast: Ast, prepare: Row => Row = identity, extractor: Row => T = identity[Row] _) =
+    QueryMirror(ast, prepare(Row()), extractor)
 
-  def executeQuerySingle[T](ast: Ast, extractor: Row => T = identity[Row] _, bind: Row => Row = identity) =
-    QueryMirror(ast, bind(Row()), extractor)
-
-  def executeQuery[T](ast: Ast, extractor: Row => T = identity[Row] _, bind: Row => Row = identity) = QueryMirror(ast, bind(Row()), extractor)
+  def executeQuerySingle[T](ast: Ast, prepare: Row => Row = identity, extractor: Row => T = identity[Row] _) =
+    QueryMirror(ast, prepare(Row()), extractor)
 }

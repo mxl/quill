@@ -4,16 +4,7 @@ import scala.reflect.ClassTag
 
 import io.getquill.Spec
 import io.getquill.testContext
-import io.getquill.testContext.Action
-import io.getquill.testContext.InfixInterpolator
-import io.getquill.testContext.Query
-import io.getquill.testContext.Quoted
-import io.getquill.testContext.TestEntity
-import io.getquill.testContext.lift
-import io.getquill.testContext.qr1
-import io.getquill.testContext.query
-import io.getquill.testContext.quote
-import io.getquill.testContext.unquote
+import io.getquill.testContext._
 import mirror.Row
 
 class ContextMacroSpec extends Spec {
@@ -28,12 +19,12 @@ class ContextMacroSpec extends Spec {
       }
       "infix" in {
         val q = quote {
-          infix"STRING".as[Action[TestEntity, Long]]
+          infix"STRING".as[Action[Long]]
         }
         testContext.run(q).ast mustEqual q.ast
       }
       "dynamic" in {
-        val q: Quoted[Action[TestEntity, Long]] = quote {
+        val q: Quoted[Action[Long]] = quote {
           qr1.delete
         }
         testContext.run(q).ast mustEqual q.ast
@@ -51,23 +42,23 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual "query[TestEntity].filter(t => t.s == lift(a)).delete"
-        r.bind mustEqual Row("a")
+        r.prepareRow mustEqual Row("a")
       }
       "infix" in {
         val q = quote {
-          infix"t = ${lift("a")}".as[Action[TestEntity, Long]]
+          infix"t = ${lift("a")}".as[Action[Long]]
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual s"""infix"t = $${lift(a)}""""
-        r.bind mustEqual Row("a")
+        r.prepareRow mustEqual Row("a")
       }
       "dynamic" in {
-        val q: Quoted[Action[TestEntity, Long]] = quote {
-          infix"t = ${lift("a")}".as[Action[TestEntity, Long]]
+        val q: Quoted[Action[Long]] = quote {
+          infix"t = ${lift("a")}".as[Action[Long]]
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual s"""infix"t = $${lift(a)}""""
-        r.bind mustEqual Row("a")
+        r.prepareRow mustEqual Row("a")
       }
       "dynamic type param" in {
         import language.reflectiveCalls
@@ -76,7 +67,7 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(test[TestEntity])
         r.ast.toString mustEqual "query[TestEntity].filter(t => t.i == lift(1)).delete"
-        r.bind mustEqual Row(1)
+        r.prepareRow mustEqual Row(1)
       }
     }
   }
@@ -114,7 +105,7 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual "query[TestEntity].filter(t => t.s == lift(a)).map(t => (t.s, t.i, t.l, t.o))"
-        r.binds mustEqual Row("a")
+        r.prepareRow mustEqual Row("a")
       }
 
       "wrapped" in {
@@ -124,7 +115,7 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual "query[Entity].filter(t => t.x == lift(1)).map(t => t.x)"
-        r.binds mustEqual Row(1)
+        r.prepareRow mustEqual Row(1)
       }
       "infix" in {
         val q = quote {
@@ -132,7 +123,7 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual s"""infix"SELECT $${lift(a)}".map(x => x)"""
-        r.binds mustEqual Row("a")
+        r.prepareRow mustEqual Row("a")
       }
       "dynamic" in {
         val q: Quoted[Query[TestEntity]] = quote {
@@ -140,7 +131,7 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast.toString mustEqual "query[TestEntity].filter(t => t.s == lift(a)).map(t => (t.s, t.i, t.l, t.o))"
-        r.binds mustEqual Row("a")
+        r.prepareRow mustEqual Row("a")
       }
       "dynamic type param" in {
         def test[T: ClassTag] = quote {
@@ -148,7 +139,7 @@ class ContextMacroSpec extends Spec {
         }
         val r = testContext.run(test[TestEntity])
         r.ast.toString mustEqual "query[TestEntity].map(t => lift(1))"
-        r.binds mustEqual Row(1)
+        r.prepareRow mustEqual Row(1)
       }
     }
     "aggregated" in {

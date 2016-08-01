@@ -23,7 +23,7 @@ class QueryMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast mustEqual q.ast
-        r.binds mustEqual Row(1)
+        r.prepareRow mustEqual Row(1)
       }
       "two" in {
         val q = quote {
@@ -31,7 +31,7 @@ class QueryMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast mustEqual q.ast
-        r.binds mustEqual Row(1, "a")
+        r.prepareRow mustEqual Row(1, "a")
       }
       "nested" in {
         val c = quote {
@@ -42,7 +42,7 @@ class QueryMacroSpec extends Spec {
         }
         val r = testContext.run(q)
         r.ast mustEqual BetaReduction(q.ast)
-        r.binds mustEqual Row(1, "a")
+        r.prepareRow mustEqual Row(1, "a")
       }
     }
     "dynamic" - {
@@ -52,7 +52,7 @@ class QueryMacroSpec extends Spec {
         }
         val r = testContext.run(q.dynamic)
         r.ast mustEqual q.ast
-        r.binds mustEqual Row(1)
+        r.prepareRow mustEqual Row(1)
       }
       "two" in {
         val q = quote {
@@ -60,7 +60,7 @@ class QueryMacroSpec extends Spec {
         }
         val r = testContext.run(q.dynamic)
         r.ast mustEqual q.ast
-        r.binds mustEqual Row(1, "a")
+        r.prepareRow mustEqual Row(1, "a")
       }
       "nested" in {
         val c = quote {
@@ -71,7 +71,7 @@ class QueryMacroSpec extends Spec {
         }
         val r = testContext.run(q.dynamic)
         r.ast mustEqual BetaReduction(q.ast)
-        r.binds mustEqual Row(1, "a")
+        r.prepareRow mustEqual Row(1, "a")
       }
     }
   }

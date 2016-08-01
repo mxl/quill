@@ -8,7 +8,7 @@ import io.getquill.Spec
 
 trait EncodingSpec extends Spec {
 
-  val c: Context
+  val c: Context[_]
 
   import c._
 

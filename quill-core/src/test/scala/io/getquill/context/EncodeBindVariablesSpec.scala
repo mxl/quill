@@ -14,7 +14,7 @@ class EncodeBindVariablesSpec extends Spec {
       val q = quote {
         qr1.filter(t => t.i == lift(i))
       }
-      testContext.run(q).binds mustEqual Row(i)
+      testContext.run(q).prepareRow mustEqual Row(i)
     }
     "three" in {
       val i = 1
@@ -23,7 +23,7 @@ class EncodeBindVariablesSpec extends Spec {
       val q = quote {
         qr1.filter(t => t.i == lift(i) && t.i > lift(j) && t.o == lift(o))
       }
-      testContext.run(q).binds mustEqual Row(i, j, o)
+      testContext.run(q).prepareRow mustEqual Row(i, j, o)
     }
   }
 
@@ -43,7 +43,7 @@ class EncodeBindVariablesSpec extends Spec {
     val q = quote {
       qr1.filter(_.i == lift(d))
     }
-    testContext.run(q).binds mustEqual Row(1D)
+    testContext.run(q).prepareRow mustEqual Row(1D)
   }
 
   "encodes bind variables for wrapped types" - {
@@ -55,7 +55,7 @@ class EncodeBindVariablesSpec extends Spec {
       }
       val r = testContext.run(q)
       r.ast.toString mustEqual "query[Entity].filter(x3 => x3.x == lift(1)).map(x3 => x3.x)"
-      r.binds mustEqual Row(1)
+      r.prepareRow mustEqual Row(1)
     }
 
     "encodes constructable `WrappedType` extended class" in {
@@ -69,7 +69,7 @@ class EncodeBindVariablesSpec extends Spec {
       }
       val r = testContext.run(q)
       r.ast.toString mustEqual "query[Entity].filter(x4 => x4.x == lift(Wrapped(1))).map(x4 => x4.x)"
-      r.binds mustEqual Row(1)
+      r.prepareRow mustEqual Row(1)
     }
 
     "fails for unwrapped class" in {

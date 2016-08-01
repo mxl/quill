@@ -22,7 +22,7 @@ class ContextInstanceSpec extends Spec {
       val q = quote {
         query[Entity].insert(_.s -> lift(StringValue("s")))
       }
-      testContext.run(q).bind mustEqual Row("s")
+      testContext.run(q).prepareRow mustEqual Row("s")
     }
 
     "decoding" in {
@@ -39,7 +39,7 @@ class ContextInstanceSpec extends Spec {
     val q = quote {
       query[Entity].filter(e => lift(Set(1)).contains(e.i))
     }
-    testContext.run(q).binds mustEqual Row(Set(1))
+    testContext.run(q).prepareRow mustEqual Row(Set(1))
   }
 
   "encodes `WrappedValue` extended value class" - {
@@ -49,7 +49,7 @@ class ContextInstanceSpec extends Spec {
       val q = quote {
         query[Entity].insert(_.x -> lift(WrappedEncodable(1)), _.s -> s"string")
       }
-      testContext.run(q).bind mustEqual Row(1)
+      testContext.run(q).prepareRow mustEqual Row(1)
     }
 
     "decoding" in {
@@ -71,7 +71,7 @@ class ContextInstanceSpec extends Spec {
       val q = quote {
         query[Entity].insert(_.x -> lift(Wrapped(1)))
       }
-      testContext.run(q).bind mustEqual Row(1)
+      testContext.run(q).prepareRow mustEqual Row(1)
     }
 
     "decoding" in {

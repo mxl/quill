@@ -4,57 +4,60 @@ import scala.reflect.macros.whitebox.{ Context => MacroContext }
 
 import io.getquill.ast.Ast
 import io.getquill.ast.Dynamic
-import io.getquill.dsl.CoreDsl
-import io.getquill.quotation.FreeVariables
 import io.getquill.quotation.Quotation
-import io.getquill.util.Messages.RichContext
+import io.getquill.util.LoadObject
+import io.getquill.util.Messages._
+import io.getquill.dsl.CoreDsl
+import io.getquill.quotation.IsDynamic
 
-trait ContextMacro extends Quotation with ActionMacro with QueryMacro with QueryProbingMacro {
+trait ContextMacro extends Quotation {
   val c: MacroContext
   import c.universe.{ Function => _, Ident => _, _ }
 
-  protected def prepare(ast: Ast): Tree
-
-  def run[R, S](quoted: Expr[_])(implicit r: WeakTypeTag[R], s: WeakTypeTag[S]): Tree = runExpr(quoted, true)(r, s)
-
-  def runSingle[R, S](quoted: Expr[_])(implicit r: WeakTypeTag[R], s: WeakTypeTag[S]): Tree = runExpr(quoted, false)(r, s)
-
-  private def runExpr[R, S](quoted: Expr[_], returnList: Boolean)(implicit r: WeakTypeTag[R], s: WeakTypeTag[S]): Tree = {
-    implicit val t = c.WeakTypeTag(quoted.actualType.baseType(c.weakTypeOf[CoreDsl#Quoted[Any]].typeSymbol).typeArgs.head)
-
-    val ast = this.ast(quoted)
-
-    FreeVariables(ast) match {
-      case free if free.isEmpty =>
-      case free =>
-        c.fail(s"""
-          |Found the following free variables: ${free.mkString(", ")}.
-          |Quotations can't reference values outside their scope directly. 
-          |In order to bind runtime values to a quotation, please use the method `lift`.
-          |Example: `def byName(n: String) = quote(query[Person].filter(_.name == lift(n)))`
-        """.stripMargin)
-    }
-
-    run(quoted.tree, ast, returnList)(r, s, t)
+  protected def expand[Statement](ast: Ast)(call: (Tree, Tree) => Tree) = {
+    val translated = translate(ast)
+    val bind =
+      q"""
+        (row: ${c.prefix}.PrepareRow) =>
+          ($translated.liftings.foldLeft((0, row)) {
+            case ((idx, row), lift) =>
+              val newRow =
+                lift.encoder.asInstanceOf[${c.prefix}.Encoder[Any]](idx, lift.value, row)
+              (idx + 1, newRow)
+          })._2
+      """
+    call(translated, bind)
   }
 
-  private def run[R, S, T](quotedTree: Tree, ast: Ast, returnList: Boolean)(implicit r: WeakTypeTag[R], s: WeakTypeTag[S], t: WeakTypeTag[T]): Tree =
-    ast match {
-      case ast if ((t.tpe.erasure <:< c.weakTypeTag[CoreDsl#Action[Any]].tpe.erasure)) =>
-        runAction[R, S, T](quotedTree, ast)
-
-      case ast =>
-        runQuery(quotedTree, ast, returnList)(r, s, queryType(t.tpe))
+  private def translate[Statement](ast: Ast): Tree =
+    IsDynamic(ast) match {
+      case false => translateStatic(ast)
+      case true  => translateDynamic(ast)
     }
 
-  private def queryType(tpe: Type) =
-    if (tpe <:< c.typeOf[CoreDsl#Query[_]])
-      c.WeakTypeTag(tpe.baseType(c.typeOf[CoreDsl#Query[_]].typeSymbol).typeArgs.head)
-    else
-      c.WeakTypeTag(tpe)
+  private def translateStatic[Statement](ast: Ast): Tree = {
+    val translator = LoadObject[Translator[Statement]](c)(c.typecheck(q"${c.prefix}.translator").tpe)
+    val translated = translator.translate(ast)
+    import translated._
 
-  private def ast[T](quoted: Expr[_]) =
-    unquote[Ast](quoted.tree).getOrElse {
-      Dynamic(quoted.tree)
-    }
+    ProbeStatement(statement, c)
+    c.info(statement.toString)
+
+    implicit val statementLiftable = translator.statementLiftable(this)
+
+    q"io.getquill.context.Translated($statement, $returningColumn, $liftings)"
+  }
+
+  private def translateDynamic[Statement](ast: Ast): Tree =
+    q"${c.prefix}.translator.translate($ast)"
+
+  def quotedType(tree: Tree) =
+    tree.tpe.baseType(c.typeOf[CoreDsl#Quoted[_]].typeSymbol).typeArgs.head
+
+  def extractAst[T](quoted: Tree) =
+    unquote[Ast](quoted)
+      .map(VerifyFreeVariables(c))
+      .getOrElse {
+        Dynamic(quoted)
+      }
 }

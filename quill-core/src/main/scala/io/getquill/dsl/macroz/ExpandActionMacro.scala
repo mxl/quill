@@ -7,24 +7,26 @@ trait ExpandActionMacro {
   val c: MacroContext
   import c.universe._
 
-  def expandInsert[T](value: Expr[T])(implicit t: WeakTypeTag[T]): Tree =
+  def expandInsert[T](value: Tree): Tree =
     expandAction(value, "insert")
 
-  def expandUpdate[T](value: Expr[T])(implicit t: WeakTypeTag[T]): Tree =
+  def expandUpdate[T](value: Tree): Tree =
     expandAction(value, "update")
 
-  private def expandAction[T](value: Expr[T], method: String)(implicit t: WeakTypeTag[T]): Tree = {
-    caseClassConstructor(t.tpe) match {
+  private def expandAction(value: Tree, method: String) = {
+    val assignments = expandAssignments(value, value.tpe)
+    q"${c.prefix}.${TermName(method)}(..$assignments)"
+  }
+
+  private def expandAssignments[T](value: Tree, tpe: Type): List[Tree] =
+    caseClassConstructor(tpe) match {
       case None => c.fail("Can't expand a non-case class")
       case Some(constructor) =>
-        val assignments =
-          constructor.paramLists.flatten.map { param =>
-            val term = param.name.toTermName
-            q"(v: $t) => v.$term -> $value.$term"
-          }
-        q"${c.prefix}.${TermName(method)}(..$assignments)"
+        constructor.paramLists.flatten.map { param =>
+          val term = param.name.toTermName
+          q"(v: $tpe) => v.$term -> $value.$term"
+        }
     }
-  }
 
   private def caseClassConstructor(t: Type) =
     t.members.collect {

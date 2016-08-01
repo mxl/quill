@@ -302,7 +302,8 @@ trait Parsing extends EntityConfigParsing {
   }
 
   private def operationParser(cond: Tree => Boolean)(
-    f: PartialFunction[String, Operator]): Parser[Operation] = {
+    f: PartialFunction[String, Operator]
+  ): Parser[Operation] = {
     object operator {
       def unapply(t: TermName) =
         f.lift(t.decodedName.toString)

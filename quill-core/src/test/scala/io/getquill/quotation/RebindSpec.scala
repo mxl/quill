@@ -8,8 +8,8 @@ class RebindSpec extends Spec {
 
   "rebind non-arg function" - {
     "with type param" in {
-      implicit class ReturnId[T, O](action: Action[T, O]) {
-        def returnId[ID] = quote(infix"$action RETURNING ID".as[Action[T, ID]])
+      implicit class ReturnId[T](action: Action[T]) {
+        def returnId[ID] = quote(infix"$action RETURNING ID".as[Action[ID]])
       }
       val q = quote {
         unquote(query[TestEntity].insert(e => e.i -> lift(1)).returnId[Long])
@@ -18,8 +18,8 @@ class RebindSpec extends Spec {
     }
 
     "with no type param" in {
-      implicit class ReturnId[T, O](action: Action[T, O]) {
-        def returnId = quote(infix"$action RETURNING ID".as[Action[T, Long]])
+      implicit class ReturnId[T](action: Action[T]) {
+        def returnId = quote(infix"$action RETURNING ID".as[Action[Long]])
       }
       val q = quote {
         unquote(query[TestEntity].insert(e => e.i -> lift(1)).returnId)
