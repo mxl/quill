@@ -117,7 +117,11 @@ trait Parsing extends EntityConfigParsing {
         case Some(ast) if (!IsDynamic(ast)) =>
           t match {
             case t: c.universe.Block => ast // expand quote(quote(body)) locally
-            case t                   => QuotedReference(t, Rebind(c)(t, ast, astParser(_)))
+            case t =>
+              Rebind(c)(t, ast, astParser(_)) match {
+                case Some(ast) => ast
+                case None      => QuotedReference(t, ast)
+              }
           }
         case other => Dynamic(t)
       }

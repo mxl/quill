@@ -14,7 +14,7 @@ class RebindSpec extends Spec {
       val q = quote {
         unquote(query[TestEntity].insert(e => e.i -> lift(1)).returnId[Long])
       }
-      testContext.run(q).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> p1)} RETURNING ID\"")
+      testContext.run(q).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> lift(1))} RETURNING ID\"")
     }
 
     "with no type param" in {
@@ -24,7 +24,7 @@ class RebindSpec extends Spec {
       val q = quote {
         unquote(query[TestEntity].insert(e => e.i -> lift(1)).returnId)
       }
-      testContext.run(q).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> p1)} RETURNING ID\"")
+      testContext.run(q).ast.toString must equal("infix\"" + "$" + "{query[TestEntity].insert(e => e.i -> lift(1))} RETURNING ID\"")
     }
   }
 

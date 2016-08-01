@@ -18,6 +18,8 @@ trait Quotation extends Liftables with Unliftables with Parsing with ReifyLiftin
 
     val ast = BetaReduction(astParser(body.tree))
 
+    c.info(ast.toString)
+
     val id = TermName(s"id${ast.hashCode.abs}")
 
     val (reifiedAst, liftings) = reifyLiftings(ast)
