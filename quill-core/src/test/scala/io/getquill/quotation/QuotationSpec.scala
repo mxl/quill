@@ -938,6 +938,14 @@ class QuotationSpec extends Spec {
         l3.value mustEqual c
         l3.encoder mustEqual floatEncoder
       }
+      "in-place" in {
+        val q = quote {
+          quote(lift(1))
+        }
+        val l = q.liftings.`1`
+        l.value mustEqual 1
+        l.encoder mustEqual intEncoder
+      }
       "nested lifted constant" in {
         val q1 = quote(lift(1))
         val q2 = quote(q1 + 1)

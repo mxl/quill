@@ -31,10 +31,14 @@ trait ReifyLiftings extends LiftingMacro {
           (ast, ReifyLiftings(state + (encode(name) -> Reified(value, encoder))))
 
         case Property(CaseClassLift(v: Tree), prop) =>
+
           val merge = c.typecheck(q"$v.${TermName(prop)}")
+
           liftTree(merge)(c.WeakTypeTag(merge.tpe)) match {
+
             case q"$ctx.lift($value, $encoder)" =>
               apply(Lift(merge.toString, value, encoder))
+
             case q"$ctx.liftCaseClass($value)" =>
               c.fail("Can't reify nested case classes.")
           }

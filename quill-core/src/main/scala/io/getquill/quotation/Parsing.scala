@@ -114,8 +114,12 @@ trait Parsing extends EntityConfigParsing {
     case q"$pack.unquote[$t]($quoted)" => astParser(quoted)
     case t if (t.tpe <:< c.weakTypeOf[CoreDsl#Quoted[Any]]) =>
       unquote[Ast](t) match {
-        case Some(ast) if (!IsDynamic(ast)) => QuotedReference(t, Rebind(c)(t, ast, astParser(_)))
-        case other                          => Dynamic(t)
+        case Some(ast) if (!IsDynamic(ast)) =>
+          t match {
+            case t: c.universe.Block => ast // expand quote(quote(body)) locally
+            case t                   => QuotedReference(t, Rebind(c)(t, ast, astParser(_)))
+          }
+        case other => Dynamic(t)
       }
   }
 
