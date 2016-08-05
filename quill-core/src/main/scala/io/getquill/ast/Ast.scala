@@ -123,7 +123,7 @@ case class Delete(query: Ast) extends Action
 
 case class Returning(action: Ast, property: String) extends Action
 
-//case class ActionAll(batch: Ast, alias: Ast, assignments
+case class BatchAction(list: Any, foreach: Ast) extends Action
 
 case class Assignment(input: Ident, property: String, value: Ast)
 

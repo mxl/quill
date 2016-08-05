@@ -64,6 +64,7 @@ import io.getquill.ast.UnionAll
 import io.getquill.ast.Update
 import io.getquill.testContext._
 import io.getquill.context.WrappedEncodable
+import io.getquill.ast.BatchAction
 
 case class CustomAnyValue(i: Int) extends AnyVal
 
@@ -90,7 +91,7 @@ class QuotationSpec extends Spec {
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
-            query[TestEntity].schema(_.columns(e => Predef.ArrowAssoc(e.s). -> [String]("theS")))
+            query[TestEntity].schema(_.columns(e => Predef.ArrowAssoc(e.s).->[String]("theS")))
           }
           quote(unquote(q)).ast mustEqual ConfiguredEntity(Entity("TestEntity"), properties = List(PropertyAlias("s", "theS")))
         }
@@ -339,14 +340,13 @@ class QuotationSpec extends Spec {
                 v => v.s -> t.s,
                 v => v.i -> t.i,
                 v => v.l -> t.l,
-                v => v.o -> t.o
-              )
+                v => v.o -> t.o)
           }
           quote(unquote(q)).ast mustEqual n.ast
         }
         "explicit `Predef.ArrowAssoc`" in {
           val q = quote {
-            qr1.update(t => Predef.ArrowAssoc(t.s). -> [String]("s"))
+            qr1.update(t => Predef.ArrowAssoc(t.s).->[String]("s"))
           }
           quote(unquote(q)).ast mustEqual Update(Entity("TestEntity"), List(Assignment(Ident("t"), "s", Constant("s"))))
         }
@@ -374,10 +374,17 @@ class QuotationSpec extends Spec {
                 v => v.s -> t.s,
                 v => v.i -> t.i,
                 v => v.l -> t.l,
-                v => v.o -> t.o
-              )
+                v => v.o -> t.o)
           }
           quote(unquote(q)).ast mustEqual n.ast
+        }
+        "batch" in {
+          val list = List(1, 2)
+          val foreach = quote((i: Int) => qr1.filter(_.i == i).delete)
+          val q = quote {
+            liftBatch(list).foreach(foreach)
+          }
+          quote(unquote(q)).ast mustEqual BatchAction(list, foreach.ast)
         }
         "unicode arrow must compile" in {
           """|quote {
@@ -417,7 +424,7 @@ class QuotationSpec extends Spec {
             quote(unquote(q)).ast mustEqual Tuple(List(Tuple(List(Constant(1), Constant("a"))), Constant("b")))
           }
           "explicit `Predef.ArrowAssoc`" in {
-            val q = quote(Predef.ArrowAssoc("a"). -> [String]("b"))
+            val q = quote(Predef.ArrowAssoc("a").->[String]("b"))
             quote(unquote(q)).ast mustEqual Tuple(List(Constant("a"), Constant("b")))
           }
         }
@@ -1062,11 +1069,9 @@ class QuotationSpec extends Spec {
           BinaryOperation(
             Property(Property(Ident("t"), "_1"), "_1"),
             NumericOperator.`+`,
-            Property(Property(Ident("t"), "_1"), "_2")
-          ),
+            Property(Property(Ident("t"), "_1"), "_2")),
           NumericOperator.`+`,
-          Property(Ident("t"), "_2")
-        )
+          Property(Ident("t"), "_2"))
     }
   }
 

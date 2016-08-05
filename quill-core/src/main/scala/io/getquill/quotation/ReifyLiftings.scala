@@ -34,7 +34,7 @@ trait ReifyLiftings extends LiftingMacro {
 
           val merge = c.typecheck(q"$v.${TermName(prop)}")
 
-          liftTree(merge)(c.WeakTypeTag(merge.tpe)) match {
+          lift(merge)(c.WeakTypeTag(merge.tpe)) match {
 
             case q"$ctx.lift($value, $encoder)" =>
               apply(Lift(merge.toString, value, encoder))

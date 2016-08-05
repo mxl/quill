@@ -31,14 +31,14 @@ class ActionMacroSpec extends Spec {
   }
 
   "runs batched action" - {
-//    "one param" in {
-//      val q = quote {
-//        lift(List(1, 2)).batch(p => qr1.insert(_.i -> p1))
-//      }
-//      val r = testContext.run(q)(List(1, 2))
+    "one param" in {
+      val q = quote {
+        liftBatch(List(1, 2)).foreach(p => qr1.insert(_.i -> p))
+      }
+      val r = testContext.run(q)
 //      r.ast mustEqual q.ast.body
-//      r.bindList mustEqual List(Row(1), Row(2))
-//    }
+      r.prepareRows mustEqual List(Row(1), Row(2))
+    }
 //    "two params" in {
 //      val q = quote {
 //        (p1: Int, p2: String) => qr1.insert(_.i -> p1, _.s -> p2)

@@ -161,10 +161,11 @@ object AstShow {
   }
 
   implicit val actionShow: Show[Action] = Show[Action] {
-    case Update(query, assignments) => s"${query.show}.update(${assignments.show})"
-    case Insert(query, assignments) => s"${query.show}.insert(${assignments.show})"
-    case Delete(query)              => s"${query.show}.delete"
-    case Returning(query, property) => s"${query.show}.returning(_.$property)"
+    case Update(query, assignments)  => s"${query.show}.update(${assignments.show})"
+    case Insert(query, assignments)  => s"${query.show}.insert(${assignments.show})"
+    case Delete(query)               => s"${query.show}.delete"
+    case Returning(query, property)  => s"${query.show}.returning(_.$property)"
+    case BatchAction(batch, foreach) => s"liftBatch(batch).forach(${foreach.show})"
   }
 
   implicit val assignmentShow: Show[Assignment] = Show[Assignment] {

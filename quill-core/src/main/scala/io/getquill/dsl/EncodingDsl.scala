@@ -1,5 +1,6 @@
 package io.getquill.dsl
 
+import scala.language.higherKinds
 import io.getquill.WrappedType
 import scala.annotation.compileTimeOnly
 import io.getquill.quotation.NonQuotedException
@@ -23,7 +24,7 @@ trait EncodingDsl {
 
   @compileTimeOnly(NonQuotedException.message)
   def liftCaseClass[T](v: T): T = NonQuotedException()
-
+  
   case class MappedEncoding[I, O](f: I => O)
 
   def mappedEncoding[I, O](f: I => O) = MappedEncoding(f)

@@ -135,6 +135,7 @@ trait Unliftables {
     case q"$pack.Insert.apply(${ a: Ast }, ${ b: List[Assignment] })" => Insert(a, b)
     case q"$pack.Delete.apply(${ a: Ast })"                           => Delete(a)
     case q"$pack.Returning.apply(${ a: Ast }, ${ b: String })"        => Returning(a, b)
+    case q"$pack.BatchAction.apply($a, ${ b: Ast })"         => BatchAction(a, b)
   }
 
   implicit val assignmentUnliftable: Unliftable[Assignment] = Unliftable[Assignment] {

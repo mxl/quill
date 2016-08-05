@@ -14,11 +14,9 @@ trait Quotation extends Liftables with Unliftables with Parsing with ReifyLiftin
   val c: Context
   import c.universe._
 
-  def quote[T](body: Expr[T])(implicit t: WeakTypeTag[T]) = {
+  def quote[T](body: Tree)(implicit t: WeakTypeTag[T]) = {
 
-    val ast = BetaReduction(astParser(body.tree))
-
-    c.info(ast.toString)
+    val ast = BetaReduction(astParser(body))
 
     val id = TermName(s"id${ast.hashCode.abs}")
 

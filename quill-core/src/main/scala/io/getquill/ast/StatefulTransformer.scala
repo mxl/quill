@@ -155,6 +155,9 @@ trait StatefulTransformer[T] {
       case Returning(a, b) =>
         val (at, att) = apply(a)
         (Returning(at, b), att)
+      case BatchAction(a, b) =>
+        val (bt, btt) = apply(b)
+        (BatchAction(a, bt), btt)
     }
 
   def apply(e: Assignment): (Assignment, StatefulTransformer[T]) =

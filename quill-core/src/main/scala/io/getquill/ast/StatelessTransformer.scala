@@ -59,10 +59,11 @@ trait StatelessTransformer {
 
   def apply(e: Action): Action =
     e match {
-      case Update(query, assignments) => Update(apply(query), assignments.map(apply))
-      case Insert(query, assignments) => Insert(apply(query), assignments.map(apply))
-      case Delete(query)              => Delete(apply(query))
-      case Returning(query, property) => Returning(apply(query), property)
+      case Update(query, assignments)  => Update(apply(query), assignments.map(apply))
+      case Insert(query, assignments)  => Insert(apply(query), assignments.map(apply))
+      case Delete(query)               => Delete(apply(query))
+      case Returning(query, property)  => Returning(apply(query), property)
+      case BatchAction(list, foreach) => BatchAction(list, apply(foreach))
     }
 
   private def apply(e: Assignment): Assignment =

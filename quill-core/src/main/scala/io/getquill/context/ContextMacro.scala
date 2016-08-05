@@ -9,6 +9,7 @@ import io.getquill.util.LoadObject
 import io.getquill.util.Messages._
 import io.getquill.dsl.CoreDsl
 import io.getquill.quotation.IsDynamic
+import io.getquill.norm.BetaReduction
 
 trait ContextMacro extends Quotation {
   val c: MacroContext

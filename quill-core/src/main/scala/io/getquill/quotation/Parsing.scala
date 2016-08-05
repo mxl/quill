@@ -302,8 +302,7 @@ trait Parsing extends EntityConfigParsing {
   }
 
   private def operationParser(cond: Tree => Boolean)(
-    f: PartialFunction[String, Operator]
-  ): Parser[Operation] = {
+    f: PartialFunction[String, Operator]): Parser[Operation] = {
     object operator {
       def unapply(t: TermName) =
         f.lift(t.decodedName.toString)
@@ -410,6 +409,8 @@ trait Parsing extends EntityConfigParsing {
       Returning(astParser(action), property.decodedName.toString)
     case q"$action.returning[$r](($alias) => $e.$property)" =>
       Returning(astParser(action), property.decodedName.toString)
+    case q"$pack.liftBatch[$t]($list).foreach[$t2]($foreach)" =>
+      BatchAction(list, astParser(foreach))
   }
 
   private val assignmentParser: Parser[Assignment] = Parser[Assignment] {

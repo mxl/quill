@@ -13,14 +13,15 @@ trait Translator[Statement] {
     Translated(
       statement(ast),
       returningColumn(ast),
-      liftings(ast)
-    )
+      liftings(ast))
 
   def statement(ast: Ast): Statement
 
   def returningColumn(ast: Ast) =
-    CollectAst.byType[Returning](ast)
-      .headOption.map(_.property)
+    ast match {
+      case Returning(_, property) => Some(property)
+      case _                      => None
+    }
 
   def liftings(ast: Ast) = CollectAst.byType[Lift](ast)
 }
@@ -42,7 +43,6 @@ trait StringLiftable {
 }
 
 case class Translated[Statement](
-  statement:       Statement,
+  statement: Statement,
   returningColumn: Option[String],
-  liftings:        List[Lift]
-)
+  liftings: List[Lift])

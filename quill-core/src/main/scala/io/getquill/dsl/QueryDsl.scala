@@ -7,6 +7,7 @@ import io.getquill.quotation.NonQuotedException
 import scala.annotation.compileTimeOnly
 
 private[dsl] trait QueryDsl {
+  this: CoreDsl =>
 
   @compileTimeOnly(NonQuotedException.message)
   def query[T](implicit ct: ClassTag[T]): EntityQuery[T] = NonQuotedException()
@@ -88,9 +89,13 @@ private[dsl] trait QueryDsl {
   sealed trait Update extends Action[Long]
   sealed trait Delete extends Action[Long]
 
-  sealed trait ActionBatch[Output]
-  implicit class Batch[T](list: List[T]) {
+  sealed trait ActionBatch[Input, Output]
+  
+  sealed trait Batch[T] {
     @compileTimeOnly(NonQuotedException.message)
-    def batch[Output](f: T => Action[Output]): ActionBatch[Output] = NonQuotedException()
+    def foreach[Output](f: T => Action[Output]): ActionBatch[T, Output] = NonQuotedException()
   }
+
+  @compileTimeOnly(NonQuotedException.message)
+  def liftBatch[T](list: List[T]): Batch[T] = NonQuotedException()
 }
