@@ -23,7 +23,7 @@ trait EncodingDsl {
   def lift[T](v: T): T = macro macroz.DslMacro.lift[T]
 
   @compileTimeOnly(NonQuotedException.message)
-  def lift[T](v: T, e: Encoder[T]): T = NonQuotedException()
+  def liftScalar[T](v: T)(implicit e: Encoder[T]): T = NonQuotedException()
 
   @compileTimeOnly(NonQuotedException.message)
   def liftCaseClass[T](v: T): T = NonQuotedException()
@@ -32,8 +32,8 @@ trait EncodingDsl {
 
   def liftBatch[B[_], T](v: B[T]): Query[T] = macro macroz.DslMacro.liftBatch[T]
 
-  @compileTimeOnly(NonQuotedException.message)
-  def liftBatch[B[_], T](v: B[T], e: Encoder[T]): Query[T] = NonQuotedException()
+//  @compileTimeOnly(NonQuotedException.message)
+  def liftBatchScalar[T, B[_]](v: B[T])(implicit e: Encoder[T]): Query[T] = NonQuotedException()
 
   @compileTimeOnly(NonQuotedException.message)
   def liftBatchCaseClass[B[_], T](v: B[T]): Query[T] = NonQuotedException()

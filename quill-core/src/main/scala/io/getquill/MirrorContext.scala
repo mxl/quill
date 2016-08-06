@@ -16,9 +16,9 @@ private[getquill] object mirrorWithQueryProbing extends MirrorContextWithQueryPr
 class MirrorContextWithQueryProbing extends MirrorContext with QueryProbing
 
 class MirrorContext
-  extends Context[Ast]
-  with MirrorEncoders
-  with MirrorDecoders {
+    extends Context[Ast]
+    with MirrorEncoders
+    with MirrorDecoders {
 
   override type PrepareRow = Row
   override type ResultRow = Row
@@ -26,8 +26,8 @@ class MirrorContext
   override type RunQueryResult[T] = QueryMirror[T]
   override type RunQuerySingleResult[T] = QueryMirror[T]
   override type RunActionResult[T] = ActionMirror
-  override type RunActionBatchResult[T, O] = ActionBatchMirror[T, O]
   override type RunActionReturningResult[T] = ActionReturningMirror[T]
+  override type RunActionBatchResult[T] = ActionBatchMirror[T]
 
   override def close = ()
 
@@ -42,15 +42,15 @@ class MirrorContext
   def transaction[T](f: => T) = f
 
   case class ActionMirror(ast: Ast, prepareRow: PrepareRow)
-  case class ActionBatchMirror[T, O](ast: Ast, prepareRows: List[PrepareRow])
+  case class ActionBatchMirror[T](ast: Ast, prepareRows: List[PrepareRow])
   case class ActionReturningMirror[O](ast: Ast, prepareRow: Row, extractor: Row => O, returningColumn: String)
   case class QueryMirror[T](ast: Ast, prepareRow: Row, extractor: Row => T)
 
   def executeAction(ast: Ast, prepare: Row => Row = identity) =
     ActionMirror(ast, prepare(Row()))
 
-  def executeActionBatch[T, O](ast: Ast, prepare: List[Row => Row] = List()) =
-    ActionBatchMirror[T, O](ast, prepare.map(_(Row())))
+  def executeActionBatch[B, T](ast: Ast, batch: List[B], prepare: B => Row => Row = (_: B) => identity[Row] _) =
+    ActionBatchMirror[T](ast, batch.map(prepare(_)(Row())))
 
   def executeActionReturning[O](ast: Ast, prepare: Row => Row = identity, extractor: Row => O, returningColumn: String) =
     ActionReturningMirror[O](ast, prepare(Row()), extractor, returningColumn)

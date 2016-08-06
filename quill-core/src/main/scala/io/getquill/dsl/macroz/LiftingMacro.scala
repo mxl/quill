@@ -16,7 +16,7 @@ trait LiftingMacro {
 
   private def lift[T](v: Tree, method: String)(implicit t: WeakTypeTag[T]): Tree =
     inferEncoder(t.tpe) match {
-      case Some(enc) => q"${c.prefix}.${TermName(method)}($v, $enc)"
+      case Some(enc) => q"${c.prefix}.${TermName(s"${method}Scalar")}($v)($enc)"
       case None =>
         t.tpe.baseType(c.symbolOf[Product]) match {
           case NoType => failEncoder(t.tpe)

@@ -49,6 +49,8 @@ private[dsl] trait QueryDsl {
     def contains[B >: T](value: B): Boolean
 
     def distinct: Query[T]
+    
+    def foreach[Output](f: T => Action[Output]): BatchAction[Output]
   }
 
   sealed trait JoinQuery[A, B, R] extends Query[R] {
@@ -89,13 +91,5 @@ private[dsl] trait QueryDsl {
   sealed trait Update extends Action[Long]
   sealed trait Delete extends Action[Long]
 
-  sealed trait ActionBatch[Input, Output]
-
-  sealed trait Batch[T] {
-    @compileTimeOnly(NonQuotedException.message)
-    def foreach[Output](f: T => Action[Output]): ActionBatch[T, Output] = NonQuotedException()
-  }
-
-  @compileTimeOnly(NonQuotedException.message)
-  def liftBatch[T](list: List[T]): Batch[T] = NonQuotedException()
+  sealed trait BatchAction[Output]
 }

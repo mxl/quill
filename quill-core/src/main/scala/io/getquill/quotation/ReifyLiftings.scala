@@ -8,7 +8,7 @@ import io.getquill.dsl.EncodingDsl
 import io.getquill.dsl.macroz.LiftingMacro
 import io.getquill.norm.BetaReduction
 
-case class ScalarLifting[T](value: T, encoder: EncodingDsl#Encoder[T])
+case class ScalarLifting[T, U](value: T, encoder: EncodingDsl#Encoder[U])
 case class CaseClassLifting[T](value: T)
 
 trait ReifyLiftings extends LiftingMacro {
@@ -45,10 +45,10 @@ trait ReifyLiftings extends LiftingMacro {
 
           lift(merge)(c.WeakTypeTag(merge.tpe)) match {
 
-            case q"$ctx.lift($value, $encoder)" =>
+            case q"$ctx.liftScalar($value)($encoder)" =>
               apply(ScalarLift(merge.toString, value, encoder))
 
-            case q"$ctx.liftBatch($value, $encoder)" =>
+            case q"$ctx.liftBatchScalar($value)($encoder)" =>
               apply(ScalarBatchLift(merge.toString, value, encoder))
 
             case other =>

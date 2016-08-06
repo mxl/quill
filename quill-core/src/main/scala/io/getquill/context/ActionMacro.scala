@@ -1,17 +1,20 @@
 package io.getquill.context
 
+import io.getquill.util.Messages._
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
 import io.getquill.ast.Ident
 import io.getquill.norm.select.SelectResultExtraction
 import io.getquill.dsl.CoreDsl
 import io.getquill.ast._
 import io.getquill.quotation.ReifyLiftings
+import io.getquill.norm.BetaReduction
+import io.getquill.quotation.IsDynamic
 
 class ActionMacro(val c: MacroContext)
-  extends ContextMacro
-  with EncodingMacro
-  with SelectResultExtraction
-  with ReifyLiftings {
+    extends ContextMacro
+    with EncodingMacro
+    with SelectResultExtraction
+    with ReifyLiftings {
   import c.universe.{ Ident => _, Function => _, _ }
 
   def runAction[Statement](quoted: Tree): Tree =
@@ -40,25 +43,30 @@ class ActionMacro(val c: MacroContext)
     }
   }
 
-  def runActionBatch[T, O, Statement](quoted: Tree)(implicit t: WeakTypeTag[T], o: WeakTypeTag[O]): Tree = {
-    //    val (list, (ast, _)) =
-    //      BetaReduction(extractAst(quoted)) match {
-    //        case BatchAction(list: Tree, Function(List(alias), action)) =>
-    //          val lift = Lift("value", q"value", inferRequiredEncoder(t.tpe))
-    //          (list, reifyLiftings(BetaReduction(action, alias -> lift)))
-    //        case other =>
-    //          c.fail(s"Batch actions must be static quotations. Found: '$other'")
-    //      }
-    //    expand[Statement](ast) {
-    //      (translated, bind) =>
-    //        q"""
-    //          ${c.prefix}.executeActionBatch[$t, $o](
-    //            $translated.statement,
-    //            $list.map(value => $bind)
-    //          )
-    //        """
-    //    }
-    ???
+  def runBatchAction[T, Statement](quoted: Tree)(implicit t: WeakTypeTag[T]): Tree = {
+    val (ast, batch) =
+      extractAst(quoted) match {
+        case ast if (IsDynamic(ast)) => c.fail(s"Batch actions must be static quotations")
+        case ast =>
+          BetaReduction(ast) match {
+            case Foreach(ScalarBatchLift(name, batch: Tree, encoder: Tree), alias, body) =>
+              val (ast, _) = reifyLiftings(BetaReduction(body, alias -> ScalarLift("value", q"value", encoder)))
+              (ast, batch)
+            case other =>
+              c.fail(s"Batch actions must be static quotations. Found: '$other'")
+          }
+      }
+    val batchItemType = batch.tpe.typeArgs.head
+    expand[Statement](ast) {
+      (translated, bind) =>
+        q"""
+          ${c.prefix}.executeActionBatch[$batchItemType, $t](
+            $translated.statement,
+            $batch,
+            value => $bind
+          )
+        """
+    }
   }
 
   private def returningExtractor(returnType: c.Type) = {
