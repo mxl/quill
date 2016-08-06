@@ -33,7 +33,7 @@ class ActionMacroSpec extends Spec {
   "runs batched action" - {
     "one param" in {
       val q = quote {
-        liftBatchScalar(List(1, 2))(intEncoder).foreach((p: Int) => qr1.insert(_.i -> p))
+        liftBatch(List(1, 2)).foreach((p: Int) => qr1.insert(_.i -> p))
       }
       val r = testContext.run(q)
       r.ast.toString mustEqual "query[TestEntity].insert(x5 => x5.i -> lift(value))"
