@@ -48,7 +48,7 @@ class MirrorContext
 
   def executeAction(ast: Ast, prepare: Row => Row = identity) =
     ActionMirror(ast, prepare(Row()))
-    
+
   def executeActionBatch[T, O](ast: Ast, prepare: List[Row => Row] = List()) =
     ActionBatchMirror[T, O](ast, prepare.map(_(Row())))
 

@@ -23,7 +23,6 @@ object AstShow {
     case ast: Ordering        => ast.show
     case q: QuotedReference   => q.ast.show
     case ast: Lift            => ast.show
-    case ast: CaseClassLift   => ast.show
   }
 
   implicit val ifShow: Show[If] = Show[If] {
@@ -34,12 +33,11 @@ object AstShow {
     case Dynamic(tree) => tree.toString
   }
 
-  implicit val caseClassLiftShow: Show[CaseClassLift] = Show[CaseClassLift] {
-    case CaseClassLift(a) => s"liftCaseClass($a)"
-  }
-
   implicit val liftShow: Show[Lift] = Show[Lift] {
-    case Lift(a, b, c) => s"lift($b)"
+    case ScalarLift(name: String, value: Any, encoder: Any)      => s"lift($value)"
+    case CaseClassLift(name: String, value: Any)                 => s"lift($value)"
+    case ScalarBatchLift(name: String, value: Any, encoder: Any) => s"liftBatch($value)"
+    case CaseClassBatchLift(name: String, value: Any)            => s"liftBatch($value)"
   }
 
   implicit val blockShow: Show[Block] = Show[Block] {
@@ -165,7 +163,7 @@ object AstShow {
     case Insert(query, assignments)  => s"${query.show}.insert(${assignments.show})"
     case Delete(query)               => s"${query.show}.delete"
     case Returning(query, property)  => s"${query.show}.returning(_.$property)"
-    case BatchAction(batch, foreach) => s"liftBatch(batch).forach(${foreach.show})"
+    case Foreach(query, alias, body) => s"${query.show}.forach((${alias.show}) => ${body.show})"
   }
 
   implicit val assignmentShow: Show[Assignment] = Show[Assignment] {

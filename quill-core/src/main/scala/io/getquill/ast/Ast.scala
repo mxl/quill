@@ -123,7 +123,7 @@ case class Delete(query: Ast) extends Action
 
 case class Returning(action: Ast, property: String) extends Action
 
-case class BatchAction(list: Any, foreach: Ast) extends Action
+case class Foreach(query: Ast, alias: Ident, body: Ast) extends Action
 
 case class Assignment(input: Ident, property: String, value: Ast)
 
@@ -133,6 +133,15 @@ case class Dynamic(tree: Any) extends Ast
 
 case class QuotedReference(tree: Trees#Tree, ast: Ast) extends Ast
 
-case class Lift(name: String, value: Any, encoder: Any) extends Ast
+sealed trait Lift extends Ast {
+  val name: String
+  val value: Any
+}
 
-case class CaseClassLift(value: Any) extends Ast
+case class ScalarLift(name: String, value: Any, encoder: Any) extends Lift
+
+case class CaseClassLift(name: String, value: Any) extends Lift
+
+case class ScalarBatchLift(name: String, value: Any, encoder: Any) extends Lift
+
+case class CaseClassBatchLift(name: String, value: Any) extends Lift

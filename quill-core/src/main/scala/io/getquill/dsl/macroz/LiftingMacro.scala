@@ -9,12 +9,19 @@ trait LiftingMacro {
   import c.universe._
 
   def lift[T](v: Tree)(implicit t: WeakTypeTag[T]): Tree =
+    lift[T](v, "lift")
+
+  def liftBatch[T](v: Tree)(implicit t: WeakTypeTag[T]): Tree =
+    lift[T](v, "liftBatch")
+
+  private def lift[T](v: Tree, method: String)(implicit t: WeakTypeTag[T]): Tree =
     inferEncoder(t.tpe) match {
-      case Some(enc) => q"${c.prefix}.lift($v, $enc)"
+      case Some(enc) => q"${c.prefix}.${TermName(method)}($v, $enc)"
       case None =>
         t.tpe.baseType(c.symbolOf[Product]) match {
           case NoType => failEncoder(t.tpe)
-          case _      => q"${c.prefix}.liftCaseClass($v)"
+          case _ =>
+            q"${c.prefix}.${TermName(s"${method}CaseClass")}($v)"
         }
     }
 
@@ -34,7 +41,8 @@ trait LiftingMacro {
   private def regularEncoder(tpe: Type): Option[Tree] =
     c.typecheck(
       q"implicitly[${c.prefix}.Encoder[$tpe]]",
-      silent = true) match {
+      silent = true
+    ) match {
         case EmptyTree => None
         case tree      => Some(tree)
       }

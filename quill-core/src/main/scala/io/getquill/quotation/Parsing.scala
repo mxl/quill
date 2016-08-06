@@ -30,7 +30,6 @@ trait Parsing extends EntityConfigParsing {
   }
 
   val astParser: Parser[Ast] = Parser[Ast] {
-    case `caseClassLiftParser`(value)       => value
     case `liftParser`(value)                => value
     case `valParser`(value)                 => value
     case `patMatchValParser`(value)         => value
@@ -99,15 +98,16 @@ trait Parsing extends EntityConfigParsing {
     case q"if($a) $b else $c" => If(astParser(a), astParser(b), astParser(c))
   }
 
-  val caseClassLiftParser: Parser[CaseClassLift] = Parser[CaseClassLift] {
-    case q"$pack.liftCaseClass[$t]($value)" => CaseClassLift(value)
-  }
-
   val liftParser: Parser[Lift] = Parser[Lift] {
-    case q"$pack.lift[$t]($value, $encoder)" => Lift(value.toString, value, encoder)
+
+    case q"$pack.lift[$t]($value, $encoder)" => ScalarLift(value.toString, value, encoder)
+    case q"$pack.liftCaseClass[$t]($value)"  => CaseClassLift(value.toString, value)
+
+    case q"$pack.lift[$t]($value, $encoder)" => ScalarLift(value.toString, value, encoder)
+    case q"$pack.liftCaseClass[$t]($value)"  => CaseClassLift(value.toString, value)
 
     // Unused, it's here only to make eclipse's presentation compiler happy :(
-    case q"$pack.lift[$t]($value)"           => Lift(value.toString, value, q"null")
+    case q"$pack.lift[$t]($value)"           => ScalarLift(value.toString, value, q"null")
   }
 
   val quotedAstParser: Parser[Ast] = Parser[Ast] {
@@ -302,7 +302,8 @@ trait Parsing extends EntityConfigParsing {
   }
 
   private def operationParser(cond: Tree => Boolean)(
-    f: PartialFunction[String, Operator]): Parser[Operation] = {
+    f: PartialFunction[String, Operator]
+  ): Parser[Operation] = {
     object operator {
       def unapply(t: TermName) =
         f.lift(t.decodedName.toString)
@@ -409,8 +410,8 @@ trait Parsing extends EntityConfigParsing {
       Returning(astParser(action), property.decodedName.toString)
     case q"$action.returning[$r](($alias) => $e.$property)" =>
       Returning(astParser(action), property.decodedName.toString)
-    case q"$pack.liftBatch[$t]($list).foreach[$t2]($foreach)" =>
-      BatchAction(list, astParser(foreach))
+    //    case q"$pack.liftBatch[$t]($list).foreach[$t2]($foreach)" =>
+    //      BatchAction(list, astParser(foreach))
   }
 
   private val assignmentParser: Parser[Assignment] = Parser[Assignment] {

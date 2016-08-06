@@ -18,7 +18,6 @@ trait Liftables {
     case ast: Ident => identLiftable(ast)
     case ast: Ordering => orderingLiftable(ast)
     case ast: Lift => liftLiftable(ast)
-    case ast: CaseClassLift => caseClassLiftLiftable(ast)
     case Val(name, body) => q"$pack.Val($name, $body)"
     case Block(statements) => q"$pack.Block($statements)"
     case Property(a, b) => q"$pack.Property($a, $b)"
@@ -120,11 +119,11 @@ trait Liftables {
   }
 
   implicit val actionLiftable: Liftable[Action] = Liftable[Action] {
-    case Update(a, b)            => q"$pack.Update($a, $b)"
-    case Insert(a, b)            => q"$pack.Insert($a, $b)"
-    case Delete(a)               => q"$pack.Delete($a)"
-    case Returning(a, b)         => q"$pack.Returning($a, $b)"
-    case BatchAction(a: Tree, b) => q"$pack.BatchAction($a, $b)"
+    case Update(a, b)     => q"$pack.Update($a, $b)"
+    case Insert(a, b)     => q"$pack.Insert($a, $b)"
+    case Delete(a)        => q"$pack.Delete($a)"
+    case Returning(a, b)  => q"$pack.Returning($a, $b)"
+    case Foreach(a, b, c) => q"$pack.Foreach($a, $b, $c)"
   }
 
   implicit val assignmentLiftable: Liftable[Assignment] = Liftable[Assignment] {
@@ -141,11 +140,10 @@ trait Liftables {
     case Ident(a) => q"$pack.Ident($a)"
   }
 
-  implicit val caseClassLiftLiftable: Liftable[CaseClassLift] = Liftable[CaseClassLift] {
-    case CaseClassLift(a: Tree) => q"$pack.CaseClassLift($a)"
-  }
-
   implicit val liftLiftable: Liftable[Lift] = Liftable[Lift] {
-    case Lift(a, b: Tree, c: Tree) => q"$pack.Lift($a, $b, $c)"
+    case ScalarLift(a, b: Tree, c: Tree)      => q"$pack.ScalarLift($a, $b, $c)"
+    case CaseClassLift(a, b: Tree)            => q"$pack.CaseClassLift($a, $b)"
+    case ScalarBatchLift(a, b: Tree, c: Tree) => q"$pack.ScalarBatchLift($a, $b, $c)"
+    case CaseClassBatchLift(a, b: Tree)       => q"$pack.CaseClassBatchLift($a, $b)"
   }
 }

@@ -17,7 +17,6 @@ trait StatelessTransformer {
       case If(a, b, c)                 => If(apply(a), apply(b), apply(c))
       case e: Dynamic                  => e
       case e: Lift                     => e
-      case e: CaseClassLift            => e
       case e: QuotedReference          => e
       case Block(statements)           => Block(statements.map(apply))
       case Val(name, body)             => Val(name, apply(body))
@@ -63,7 +62,7 @@ trait StatelessTransformer {
       case Insert(query, assignments)  => Insert(apply(query), assignments.map(apply))
       case Delete(query)               => Delete(apply(query))
       case Returning(query, property)  => Returning(apply(query), property)
-      case BatchAction(list, foreach) => BatchAction(list, apply(foreach))
+      case Foreach(query, alias, body) => Foreach(apply(query), alias, apply(body))
     }
 
   private def apply(e: Assignment): Assignment =

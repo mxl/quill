@@ -2,8 +2,8 @@ package io.getquill.context
 
 import io.getquill.ast.Ast
 import io.getquill.ast.CollectAst
-import io.getquill.ast.Lift
 import io.getquill.ast.Returning
+import io.getquill.ast.ScalarLift
 
 trait Translator[Statement] {
 
@@ -13,7 +13,8 @@ trait Translator[Statement] {
     Translated(
       statement(ast),
       returningColumn(ast),
-      liftings(ast))
+      liftings(ast)
+    )
 
   def statement(ast: Ast): Statement
 
@@ -23,7 +24,7 @@ trait Translator[Statement] {
       case _                      => None
     }
 
-  def liftings(ast: Ast) = CollectAst.byType[Lift](ast)
+  def liftings(ast: Ast) = CollectAst.byType[ScalarLift](ast)
 }
 
 trait AstLiftable {
@@ -43,6 +44,7 @@ trait StringLiftable {
 }
 
 case class Translated[Statement](
-  statement: Statement,
+  statement:       Statement,
   returningColumn: Option[String],
-  liftings: List[Lift])
+  liftings:        List[ScalarLift]
+)

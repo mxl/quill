@@ -9,7 +9,7 @@ import io.getquill.util.LoadObject
 import io.getquill.util.Messages._
 import io.getquill.dsl.CoreDsl
 import io.getquill.quotation.IsDynamic
-import io.getquill.norm.BetaReduction
+import io.getquill.ast.Lift
 
 trait ContextMacro extends Quotation {
   val c: MacroContext
@@ -46,7 +46,7 @@ trait ContextMacro extends Quotation {
 
     implicit val statementLiftable = translator.statementLiftable(this)
 
-    q"io.getquill.context.Translated($statement, $returningColumn, $liftings)"
+    q"io.getquill.context.Translated($statement, $returningColumn, ${liftings: List[Lift]})"
   }
 
   private def translateDynamic[Statement](ast: Ast): Tree =

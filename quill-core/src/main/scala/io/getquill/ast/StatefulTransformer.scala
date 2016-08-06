@@ -36,11 +36,9 @@ trait StatefulTransformer[T] {
         val (ct, ctt) = btt.apply(c)
         (If(at, bt, ct), ctt)
 
-      case l: Dynamic       => (l, this)
+      case l: Dynamic => (l, this)
 
-      case l: Lift          => (l, this)
-
-      case l: CaseClassLift => (l, this)
+      case l: Lift    => (l, this)
 
       case QuotedReference(a, b) =>
         val (bt, btt) = apply(b)
@@ -155,9 +153,10 @@ trait StatefulTransformer[T] {
       case Returning(a, b) =>
         val (at, att) = apply(a)
         (Returning(at, b), att)
-      case BatchAction(a, b) =>
-        val (bt, btt) = apply(b)
-        (BatchAction(a, bt), btt)
+      case Foreach(a, b, c) =>
+        val (at, att) = apply(a)
+        val (ct, ctt) = att.apply(c)
+        (Foreach(at, b, ct), ctt)
     }
 
   def apply(e: Assignment): (Assignment, StatefulTransformer[T]) =

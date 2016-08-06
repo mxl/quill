@@ -10,7 +10,6 @@ trait Unliftables {
   import c.universe.{ Ident => _, Constant => _, Function => _, If => _, _ }
 
   implicit val astUnliftable: Unliftable[Ast] = Unliftable[Ast] {
-    case caseClassLiftUnliftable(ast) => ast
     case liftUnliftable(ast) => ast
     case queryUnliftable(ast) => ast
     case actionUnliftable(ast) => ast
@@ -131,11 +130,11 @@ trait Unliftables {
   }
 
   implicit val actionUnliftable: Unliftable[Action] = Unliftable[Action] {
-    case q"$pack.Update.apply(${ a: Ast }, ${ b: List[Assignment] })" => Update(a, b)
-    case q"$pack.Insert.apply(${ a: Ast }, ${ b: List[Assignment] })" => Insert(a, b)
-    case q"$pack.Delete.apply(${ a: Ast })"                           => Delete(a)
-    case q"$pack.Returning.apply(${ a: Ast }, ${ b: String })"        => Returning(a, b)
-    case q"$pack.BatchAction.apply($a, ${ b: Ast })"         => BatchAction(a, b)
+    case q"$pack.Update.apply(${ a: Ast }, ${ b: List[Assignment] })"    => Update(a, b)
+    case q"$pack.Insert.apply(${ a: Ast }, ${ b: List[Assignment] })"    => Insert(a, b)
+    case q"$pack.Delete.apply(${ a: Ast })"                              => Delete(a)
+    case q"$pack.Returning.apply(${ a: Ast }, ${ b: String })"           => Returning(a, b)
+    case q"$pack.Foreach.apply(${ a: Ast }, ${ b: Ident }, ${ c: Ast })" => Foreach(a, b, c)
   }
 
   implicit val assignmentUnliftable: Unliftable[Assignment] = Unliftable[Assignment] {
@@ -152,11 +151,10 @@ trait Unliftables {
     case q"$pack.Ident.apply(${ a: String })" => Ident(a)
   }
 
-  implicit val caseClassLiftUnliftable: Unliftable[CaseClassLift] = Unliftable[CaseClassLift] {
-    case q"$pack.CaseClassLift.apply($a)" => CaseClassLift(a)
-  }
-
   implicit val liftUnliftable: Unliftable[Lift] = Unliftable[Lift] {
-    case q"$pack.Lift.apply(${ a: String }, $b, $c)" => Lift(a, b, c)
+    case q"$pack.ScalarLift.apply(${ a: String }, $b, $c)"         => ScalarLift(a, b, c)
+    case q"$pack.CaseClassLift.apply(${ a: String }, $b)"          => CaseClassLift(a, b)
+    case q"$pack.ScalarBatchLift.apply(${ a: String }, $b, $c)"    => ScalarBatchLift(a, b, c)
+    case q"$pack.CaseClassBatchLift.apply(${ a: String }, $b, $c)" => CaseClassBatchLift(a, b)
   }
 }

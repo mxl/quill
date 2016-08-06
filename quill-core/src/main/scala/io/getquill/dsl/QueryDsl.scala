@@ -56,7 +56,7 @@ private[dsl] trait QueryDsl {
   }
 
   sealed trait EntityQuery[T]
-      extends Query[T] {
+    extends Query[T] {
 
     def schema(f: Schema[T] => Schema[T]): EntityQuery[T]
 
@@ -90,7 +90,7 @@ private[dsl] trait QueryDsl {
   sealed trait Delete extends Action[Long]
 
   sealed trait ActionBatch[Input, Output]
-  
+
   sealed trait Batch[T] {
     @compileTimeOnly(NonQuotedException.message)
     def foreach[Output](f: T => Action[Output]): ActionBatch[T, Output] = NonQuotedException()

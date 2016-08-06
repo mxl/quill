@@ -7,6 +7,7 @@ import io.getquill.quotation.NonQuotedException
 import scala.language.experimental.macros
 
 trait EncodingDsl {
+  this: CoreDsl =>
 
   type PrepareRow
   type ResultRow
@@ -17,6 +18,8 @@ trait EncodingDsl {
     def apply(index: Int, value: T, row: PrepareRow): PrepareRow
   }
 
+  /* ************************************************************************** */
+
   def lift[T](v: T): T = macro macroz.DslMacro.lift[T]
 
   @compileTimeOnly(NonQuotedException.message)
@@ -24,7 +27,19 @@ trait EncodingDsl {
 
   @compileTimeOnly(NonQuotedException.message)
   def liftCaseClass[T](v: T): T = NonQuotedException()
-  
+
+  /* ************************************************************************** */
+
+  def liftBatch[B[_], T](v: B[T]): Query[T] = macro macroz.DslMacro.liftBatch[T]
+
+  @compileTimeOnly(NonQuotedException.message)
+  def liftBatch[B[_], T](v: B[T], e: Encoder[T]): Query[T] = NonQuotedException()
+
+  @compileTimeOnly(NonQuotedException.message)
+  def liftBatchCaseClass[B[_], T](v: B[T]): Query[T] = NonQuotedException()
+
+  /* ************************************************************************** */
+
   case class MappedEncoding[I, O](f: I => O)
 
   def mappedEncoding[I, O](f: I => O) = MappedEncoding(f)
