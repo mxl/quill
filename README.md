@@ -116,7 +116,16 @@ val q: Quoted[Query[Circle]] = quote {
 ctx.run(q) // Dynamic query
 ```
 
-Quill falls back to runtime normalization and query generation if the quotation's AST can't be read at compile-time. Please refer to [dynamic queries](#dynamic-queries) for more information
+Quill falls back to runtime normalization and query generation if the quotation's AST can't be read at compile-time. Please refer to [dynamic queries](#dynamic-queries) for more information.
+
+#### Inline queries
+
+Quoting is implicit when writing a query in a `run` statement.
+
+```scala
+ctx.run(query[Circle].map(_.radius))
+// SELECT r.radius FROM Circle r
+```
 
 Bindings
 --------
@@ -1059,7 +1068,7 @@ sbt dependencies
 ```
 libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.38",
-  "io.getquill" %% "quill-jdbc" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-jdbc" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1086,7 +1095,7 @@ sbt dependencies
 ```
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4.1208",
-  "io.getquill" %% "quill-jdbc" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-jdbc" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1112,7 +1121,7 @@ sbt dependencies
 ```
 libraryDependencies ++= Seq(
   "org.xerial" % "sqlite-jdbc" % "3.8.11.2",
-  "io.getquill" %% "quill-jdbc" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-jdbc" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1133,7 +1142,7 @@ sbt dependencies
 ```
 libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.4.192",
-  "io.getquill" %% "quill-jdbc" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-jdbc" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1193,7 +1202,7 @@ Note that the global execution context is renamed to ec.
 sbt dependencies
 ```
 libraryDependencies ++= Seq(
-  "io.getquill" %% "quill-async-mysql" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-async-mysql" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1220,7 +1229,7 @@ ctx.poolValidationInterval=100
 sbt dependencies
 ```
 libraryDependencies ++= Seq(
-  "io.getquill" %% "quill-async-postgres" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-async-postgres" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1260,7 +1269,7 @@ The body of `transaction` can contain calls to other methods and multiple `run` 
 sbt dependencies
 ```
 libraryDependencies ++= Seq(
-  "io.getquill" %% "quill-finagle-mysql" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-finagle-mysql" % "0.10.1-SNAPSHOT"
 )
 ```
 
@@ -1282,13 +1291,53 @@ ctx.pool.bufferSize=0
 ctx.pool.maxWaiters=2147483647
 ```
 
+##### quill-finagle-postgres
+
+**Transactions**
+
+The finagle context provides transaction support through a `Local` value. See twitter util's [scaladoc](https://github.com/twitter/util/blob/ee8d3140ba0ecc16b54591bd9d8961c11b999c0d/util-core/src/main/scala/com/twitter/util/Local.scala#L96) for more details.
+
+```
+ctx.transaction {
+  ctx.run(query[Person].delete)
+  // other transactional code
+}
+```
+
+The body of `transaction` can contain calls to other methods and multiple `run` calls, since the transaction is automatically propagated through the `Local` value.
+
+sbt dependencies
+```
+libraryDependencies ++= Seq(
+  "io.getquill" %% "quill-finagle-postgres" % "0.10.1-SNAPSHOT"
+)
+```
+
+context definition
+```scala
+lazy val ctx = new FinaglePostgresContext[SnakeCase]("ctx")
+```
+
+application.properties
+```
+ctx.host=localhost:3306
+ctx.user=root
+ctx.password=root
+ctx.database=database
+ctx.useSsl=false
+ctx.hostConnectionLimit=1
+ctx.numRetries=4
+ctx.binaryResults=false
+ctx.binaryParams=false
+```
+
 Cassandra Contexts
 -----------------
 
 sbt dependencies
 ```
 libraryDependencies ++= Seq(
-  "io.getquill" %% "quill-cassandra" % "0.9.1-SNAPSHOT"
+  "io.getquill" %% "quill-cassandra" % "0.10.1-SNAPSHOT"
 )
 ```
 
