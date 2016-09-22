@@ -26,7 +26,7 @@ trait ContextMacro extends Quotation {
 
   protected def expand(ast: Ast): Tree =
     q"""
-      val (idiom, naming) = ${idiomAndNamingDynamic}
+      val (idiom, naming) = $idiomAndNamingDynamic
       val (ast, statement) = ${translate(ast)}
       io.getquill.context.Expand(${c.prefix}, ast, statement, idiom, naming)
     """

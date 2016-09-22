@@ -52,7 +52,7 @@ object ExpandNestedQueries {
           case Property(Property(_, tupleElem), prop) =>
             val p = Property(select(tupleElem.drop(1).toInt - 1).ast, prop)
             SelectValue(p, Some(tupleElem + prop))
-          case Property(_, tupleElem) if (tupleElem.matches("_[0-9]*")) =>
+          case Property(_, tupleElem) if tupleElem.matches("_[0-9]*") =>
             SelectValue(select(tupleElem.drop(1).toInt - 1).ast, Some(tupleElem))
           case Property(_, name) =>
             select match {
@@ -70,7 +70,7 @@ object ExpandNestedQueries {
 
 case class State(ident: Ident, references: List[Property])
 
-case class References(val state: State)
+case class References(state: State)
   extends StatefulTransformer[State] {
 
   import state._
