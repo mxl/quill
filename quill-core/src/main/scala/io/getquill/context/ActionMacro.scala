@@ -1,8 +1,6 @@
 package io.getquill.context
 
 import scala.reflect.macros.whitebox.{ Context => MacroContext }
-import io.getquill.ast.Ident
-import io.getquill.norm.select.SelectResultExtraction
 import io.getquill.ast._
 import io.getquill.quotation.ReifyLiftings
 import io.getquill.util.Messages._
@@ -10,30 +8,32 @@ import io.getquill.norm.BetaReduction
 
 class ActionMacro(val c: MacroContext)
   extends ContextMacro
-  with EncodingMacro
-  with SelectResultExtraction
   with ReifyLiftings {
   import c.universe.{ Ident => _, Function => _, _ }
 
   def runAction(quoted: Tree): Tree =
-    q"""
-      val expanded = ${expand(extractAst(quoted))}
-      ${c.prefix}.executeAction(
-        expanded.string,
-        expanded.prepare
-      )
-    """
+    c.untypecheck {
+      q"""
+        val expanded = ${expand(extractAst(quoted))}
+        ${c.prefix}.executeAction(
+          expanded.string,
+          expanded.prepare
+        )
+      """
+    }
 
   def runActionReturning[T](quoted: Tree)(implicit t: WeakTypeTag[T]): Tree =
-    q"""
-      val expanded = ${expand(extractAst(quoted))}
-      ${c.prefix}.executeActionReturning(
-        expanded.string,
-        expanded.prepare,
-        ${returningExtractor(t.tpe)},
-        $returningColumn
-      )
-    """
+    c.untypecheck {
+      q"""
+        val expanded = ${expand(extractAst(quoted))}
+        ${c.prefix}.executeActionReturning(
+          expanded.string,
+          expanded.prepare,
+          ${returningExtractor[T]},
+          $returningColumn
+        )
+      """
+    }
 
   def runBatchAction(quoted: Tree): Tree =
     expandBatchAction(quoted) {
@@ -63,7 +63,7 @@ class ActionMacro(val c: MacroContext)
               case ((string, column), items) =>
                 ${c.prefix}.BatchGroupReturning(string, column, items.map(_._2))
             }.toList,
-            ${returningExtractor(t.tpe)}
+            ${returningExtractor[T]}
           )
         """
     }
@@ -101,8 +101,6 @@ class ActionMacro(val c: MacroContext)
       }
     """
 
-  private def returningExtractor(returnType: c.Type) = {
-    val selectValues = encoding(Ident("X"), returnType, Encoding.inferDecoder(c))
-    selectResultExtractor(selectValues)
-  }
+  private def returningExtractor[T](implicit t: WeakTypeTag[T]) =
+    q"(row: ${c.prefix}.ResultRow) => implicitly[Decoder[$t]].apply(0, row)"
 }

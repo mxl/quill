@@ -1,6 +1,7 @@
 package io.getquill.context.cassandra
 
 import io.getquill._
+import monix.reactive.Observable
 
 class DecodeNullSpec extends Spec {
 
@@ -8,7 +9,7 @@ class DecodeNullSpec extends Spec {
 
     "sync" in {
       import testSyncDB._
-      val writeEntities = quote(query[DecodeNullTestWriteEntity].schema(_.entity("DecodeNullTestEntity")))
+      val writeEntities = quote(querySchema[DecodeNullTestWriteEntity]("DecodeNullTestEntity"))
 
       testSyncDB.run(writeEntities.delete)
       testSyncDB.run(writeEntities.insert(lift(insertValue)))
@@ -20,7 +21,7 @@ class DecodeNullSpec extends Spec {
     "async" in {
       import testAsyncDB._
       import scala.concurrent.ExecutionContext.Implicits.global
-      val writeEntities = quote(query[DecodeNullTestWriteEntity].schema(_.entity("DecodeNullTestEntity")))
+      val writeEntities = quote(querySchema[DecodeNullTestWriteEntity]("DecodeNullTestEntity"))
 
       val result =
         for {
@@ -39,20 +40,20 @@ class DecodeNullSpec extends Spec {
 
     "stream" in {
       import testStreamDB._
-      import monifu.concurrent.Implicits.globalScheduler
-      val writeEntities = quote(query[DecodeNullTestWriteEntity].schema(_.entity("DecodeNullTestEntity")))
+      import monix.execution.Scheduler.Implicits.global
+      val writeEntities = quote(querySchema[DecodeNullTestWriteEntity]("DecodeNullTestEntity"))
 
       val result =
         for {
           _ <- testStreamDB.run(writeEntities.delete)
-          _ <- testStreamDB.run(writeEntities.insert(lift(insertValue))).count
+          _ <- Observable.fromTask(testStreamDB.run(writeEntities.insert(lift(insertValue))).countL)
           result <- testStreamDB.run(query[DecodeNullTestEntity])
         } yield {
           result
         }
       intercept[IllegalStateException] {
         await {
-          result.asFuture
+          result.headL.runAsync
         }
       }
     }

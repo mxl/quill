@@ -1,3 +1,17 @@
+# 1.0.0-RC1 - 20-Oct-2016
+
+- [introduce `finagle-postgres`](https://github.com/getquill/quill/pull/560)
+- [introduce meta dsl](https://github.com/getquill/quill/pull/554)
+- [expand meta dsl](https://github.com/getquill/quill/pull/590)
+- [encoder for java 8 LocalDate & LocalDateTime](https://github.com/getquill/quill/pull/583)
+- [Upgraded to Monix 2.x](https://github.com/getquill/quill/pull/578)
+- [Make withClient function not private](https://github.com/getquill/quill/pull/575)
+- [pass ssl settings to async driver](https://github.com/getquill/quill/pull/587)
+
+### Migration notes
+
+- New API for schema definition: `query[Person].schema(_.entity("people").columns(_.id -> "person_id")` becomes `querySchema[Person]("People", _.id -> "person_id")`. Note that the entity name ("People") is now always required.
+
 # 0.10.0 - 5-Sep-2016
 
 **see migration notes below**

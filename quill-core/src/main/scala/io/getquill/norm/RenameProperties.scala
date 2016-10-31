@@ -95,12 +95,15 @@ object RenameProperties extends StatelessTransformer {
 
   private def replacements(base: Ast, schema: Ast): List[(Ast, Ast)] =
     (schema: @unchecked) match {
-      case e: SimpleEntity =>
-        List.empty
-      case e: ConfiguredEntity =>
-        e.properties.map {
-          case PropertyAlias(prop, alias) =>
-            Property(base, prop) -> Property(base, alias)
+      case Entity(entity, properties) =>
+        properties.map {
+          case PropertyAlias(path, alias) =>
+            def apply(base: Ast, path: List[String]): Ast =
+              path match {
+                case Nil          => base
+                case head :: tail => apply(Property(base, head), tail)
+              }
+            apply(base, path) -> Property(base, alias)
         }
       case Tuple(values) =>
         values.zipWithIndex.map {

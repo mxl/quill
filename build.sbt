@@ -3,7 +3,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 import sbtrelease.ReleasePlugin
 
-lazy val `quill` = 
+lazy val `quill` =
   (project in file("."))
     .settings(tutSettings ++ commonSettings)
     .settings(`tut-settings`:_*)
@@ -28,7 +28,7 @@ lazy val superPure = new org.scalajs.sbtplugin.cross.CrossType {
     Some(projectBase.getParentFile / "src" / conf / "scala")
 }
 
-lazy val `quill-core` = 
+lazy val `quill-core` =
   crossProject.crossType(superPure)
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
@@ -38,13 +38,14 @@ lazy val `quill-core` =
       "org.scala-lang"             %  "scala-reflect" % scalaVersion.value
     ))
     .jsSettings(
+      libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % "0.2.0",
       coverageExcludedPackages := ".*"
     )
 
 lazy val `quill-core-jvm` = `quill-core`.jvm
 lazy val `quill-core-js` = `quill-core`.js
 
-lazy val `quill-sql` = 
+lazy val `quill-sql` =
   crossProject.crossType(superPure)
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
@@ -56,7 +57,7 @@ lazy val `quill-sql` =
 lazy val `quill-sql-jvm` = `quill-sql`.jvm
 lazy val `quill-sql-js` = `quill-sql`.js
 
-lazy val `quill-jdbc` = 
+lazy val `quill-jdbc` =
   (project in file("quill-jdbc"))
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
@@ -72,7 +73,7 @@ lazy val `quill-jdbc` =
     )
     .dependsOn(`quill-sql-jvm` % "compile->compile;test->test")
 
-lazy val `quill-finagle-mysql` = 
+lazy val `quill-finagle-mysql` =
   (project in file("quill-finagle-mysql"))
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
@@ -84,7 +85,7 @@ lazy val `quill-finagle-mysql` =
     )
     .dependsOn(`quill-sql-jvm` % "compile->compile;test->test")
 
-lazy val `quill-finagle-postgres` = 
+lazy val `quill-finagle-postgres` =
   (project in file("quill-finagle-postgres"))
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
@@ -132,7 +133,7 @@ lazy val `quill-async-postgres` =
     )
     .dependsOn(`quill-async` % "compile->compile;test->test")
 
-lazy val `quill-cassandra` = 
+lazy val `quill-cassandra` =
   (project in file("quill-cassandra"))
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
@@ -140,7 +141,7 @@ lazy val `quill-cassandra` =
       fork in Test := true,
       libraryDependencies ++= Seq(
         "com.datastax.cassandra" %  "cassandra-driver-core" % "3.0.2",
-        "org.monifu"             %% "monifu"                % "1.2"
+        "io.monix"               %% "monix"                % "2.0.2"
       )
     )
     .dependsOn(`quill-core-jvm` % "compile->compile;test->test")
@@ -178,12 +179,13 @@ lazy val mimaSettings = MimaPlugin.mimaDefaultSettings ++ Seq(
 
 commands += Command.command("checkUnformattedFiles") { st =>
   val vcs = Project.extract(st).get(releaseVcs).get
-  if(vcs.hasModifiedFiles)
-    throw new IllegalStateException("Found unformatted files. Please run `sbt scalariformFormat test:scalariformFormat` and resubmit your pull request.")
+  val modified = vcs.cmd("ls-files", "--modified", "--exclude-standard").!!.trim
+  if(modified.nonEmpty)
+    throw new IllegalStateException(s"Please run `sbt scalariformFormat test:scalariformFormat` and resubmit your pull request. Found unformatted files: \n$modified")
   st
 }
 
-def updateReadmeVersion(selectVersion: sbtrelease.Versions => String) = 
+def updateReadmeVersion(selectVersion: sbtrelease.Versions => String) =
   ReleaseStep(action = st => {
 
     val newVersion = selectVersion(st.get(ReleaseKeys.versions).get)
@@ -208,7 +210,7 @@ def updateReadmeVersion(selectVersion: sbtrelease.Versions => String) =
     st
   })
 
-def updateWebsiteTag = 
+def updateWebsiteTag =
   ReleaseStep(action = st => {
 
     val vcs = Project.extract(st).get(releaseVcs).get
@@ -238,9 +240,9 @@ lazy val commonSettings = ReleasePlugin.extraReleaseCommands ++ Seq(
     "-feature",
     "-unchecked",
     "-Xlint",
-    "-Yno-adapted-args",       
+    "-Yno-adapted-args",
     "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",   
+    "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     "-Xfuture",
     "-Ywarn-unused-import"
@@ -315,4 +317,3 @@ lazy val commonSettings = ReleasePlugin.extraReleaseCommands ++ Seq(
       </developer>
     </developers>)
 )
-

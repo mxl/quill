@@ -9,7 +9,7 @@ import io.getquill.dsl.CoreDsl
 import scala.collection.immutable.StringOps
 import scala.reflect.macros.TypecheckException
 
-trait Parsing extends EntityConfigParsing {
+trait Parsing {
   this: Quotation =>
 
   import c.universe.{ Ident => _, Constant => _, Function => _, If => _, Block => _, _ }
@@ -32,12 +32,12 @@ trait Parsing extends EntityConfigParsing {
 
   val astParser: Parser[Ast] = Parser[Ast] {
     case q"$i: $typ"                        => astParser(i)
+    case `queryParser`(value)               => value
     case `liftParser`(value)                => value
     case `valParser`(value)                 => value
     case `patMatchValParser`(value)         => value
     case `valueParser`(value)               => value
     case `quotedAstParser`(value)           => value
-    case `queryParser`(value)               => value
     case `functionParser`(value)            => value
     case `actionParser`(value)              => value
     case `infixParser`(value)               => value
@@ -158,21 +158,12 @@ trait Parsing extends EntityConfigParsing {
 
   val queryParser: Parser[Ast] = Parser[Ast] {
 
-    case q"$source.schema(($alias) => $body)" =>
-      val config = parseEntityConfig(body)
-      ConfiguredEntity(astParser(source), config.alias, config.properties)
+    case q"$pack.query[$t]" =>
+      // Unused, it's here only to make eclipse's presentation compiler happy
+      Entity("unused", Nil)
 
-    case q"$pack.query[${ t: Type }]($ct)" if (t.typeSymbol.isClass) =>
-      SimpleEntity(t.typeSymbol.name.decodedName.toString)
-
-    case q"$pack.query[${ _ }]($ct)" =>
-      Dynamic {
-        c.typecheck(q"""
-              new ${c.prefix}.Quoted[${c.prefix}.EntityQuery[T]] {
-                override def ast = io.getquill.ast.SimpleEntity($ct.runtimeClass.getSimpleName)
-              }
-            """)
-      }
+    case q"$pack.querySchema[$t](${ name: String }, ..$properties)" =>
+      Entity(name, properties.map(propertyAliasParser(_)))
 
     case q"$source.filter(($alias) => $body)" if (is[CoreDsl#Query[Any]](source)) =>
       Filter(astParser(source), identParser(alias), astParser(body))
@@ -231,6 +222,18 @@ trait Parsing extends EntityConfigParsing {
 
   }
 
+  implicit val propertyAliasParser: Parser[PropertyAlias] = Parser[PropertyAlias] {
+    case q"(($x1) => $pack.Predef.ArrowAssoc[$t]($prop).$arrow[$v](${ alias: String }))" =>
+      def path(tree: Tree): List[String] =
+        tree match {
+          case q"$a.$b" =>
+            path(a) :+ b.decodedName.toString
+          case _ =>
+            Nil
+        }
+      PropertyAlias(path(prop), alias)
+  }
+
   implicit val orderingParser: Parser[Ordering] = Parser[Ordering] {
     case q"$pack.implicitOrd[$t]"           => AscNullsFirst
     case q"$pack.Ord.apply[..$t](..$elems)" => TupleOrdering(elems.map(orderingParser(_)))
@@ -240,11 +243,6 @@ trait Parsing extends EntityConfigParsing {
     case q"$pack.Ord.descNullsFirst[$t]"    => DescNullsFirst
     case q"$pack.Ord.ascNullsLast[$t]"      => AscNullsLast
     case q"$pack.Ord.descNullsLast[$t]"     => DescNullsLast
-  }
-
-  implicit val propertyAliasParser: Parser[PropertyAlias] = Parser[PropertyAlias] {
-    case q"(($x1) => $pack.Predef.ArrowAssoc[$t]($x2.$prop).$arrow[$v](${ alias: String }))" =>
-      PropertyAlias(prop.decodedName.toString, alias)
   }
 
   val joinCallParser: Parser[(JoinType, Ast, Option[Ast])] = Parser[(JoinType, Ast, Option[Ast])] {
@@ -397,11 +395,13 @@ trait Parsing extends EntityConfigParsing {
   private def is[T](tree: Tree)(implicit t: TypeTag[T]) =
     tree.tpe <:< t.tpe
 
-  val valueParser: Parser[Value] = Parser[Value] {
+  val valueParser: Parser[Ast] = Parser[Ast] {
     case q"null" => NullValue
     case Literal(c.universe.Constant(v)) => Constant(v)
     case q"((..$v))" if (v.size > 1) => Tuple(v.map(astParser(_)))
     case q"(($pack.Predef.ArrowAssoc[$t1]($v1).$arrow[$t2]($v2)))" => Tuple(List(astParser(v1), astParser(v2)))
+    case q"io.getquill.dsl.UnlimitedTuple.apply($v)" => astParser(v)
+    case q"io.getquill.dsl.UnlimitedTuple.apply(..$v)" => Tuple(v.map(astParser(_)))
   }
 
   val actionParser: Parser[Ast] = Parser[Ast] {
@@ -420,12 +420,7 @@ trait Parsing extends EntityConfigParsing {
   private val assignmentParser: Parser[Assignment] = Parser[Assignment] {
     case q"((${ identParser(i1) }) => $pack.Predef.ArrowAssoc[$t]($prop).$arrow[$v]($value))" =>
       checkTypes(prop, value)
-      prop match {
-        case q"${ identParser(i2) }.$prop" if (i1 == i2) =>
-          Assignment(i1, Property(i2, prop.decodedName.toString), astParser(value))
-        case prop =>
-          c.fail(s"Invalid assignment property: '$prop'")
-      }
+      Assignment(i1, astParser(prop), astParser(value))
 
     // Unused, it's here only to make eclipse's presentation compiler happy
     case astParser(ast) => Assignment(Ident("unused"), Ident("unused"), Constant("unused"))
