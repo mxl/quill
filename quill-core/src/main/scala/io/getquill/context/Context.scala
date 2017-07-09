@@ -9,7 +9,8 @@ import io.getquill.NamingStrategy
 
 trait Context[Idiom <: io.getquill.idiom.Idiom, Naming <: NamingStrategy]
   extends Closeable
-  with CoreDsl {
+  with CoreDsl
+  with Infix {
 
   type RunQuerySingleResult[T]
   type RunQueryResult[T]

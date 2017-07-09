@@ -18,4 +18,5 @@ trait TestEntities {
   val qr3 = quote {
     query[TestEntity3]
   }
+
 }

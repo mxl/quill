@@ -6,7 +6,6 @@ import io.getquill.testContext
 import io.getquill.testContext._
 import io.getquill.idiom.StatementInterpolator._
 import io.getquill.Literal
-import io.getquill.ast.Ast
 import io.getquill.ast._
 
 class MirrorIdiomSpec extends Spec {
