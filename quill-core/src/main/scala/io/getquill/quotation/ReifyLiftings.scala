@@ -27,10 +27,10 @@ trait ReifyLiftings extends LiftUser {
 
     private def reify(lift: Lift) =
       lift match {
-        case ScalarValueLift(name, value: Tree, encoder: Tree) => Reified(value, Some(encoder))
-        case CaseClassValueLift(name, value: Tree)             => Reified(value, None)
-        case ScalarQueryLift(name, value: Tree, encoder: Tree) => Reified(value, Some(encoder))
-        case CaseClassQueryLift(name, value: Tree)             => Reified(value, None)
+        case ScalarValueLift(name, value, encoder) => Reified(value, Some(encoder))
+        case CaseClassValueLift(name, value)       => Reified(value, None)
+        case ScalarQueryLift(name, value, encoder) => Reified(value, Some(encoder))
+        case CaseClassQueryLift(name, value)       => Reified(value, None)
       }
 
     private def unparse(ast: Ast): Tree =
@@ -39,8 +39,8 @@ trait ReifyLiftings extends LiftUser {
         case Property(nested, name)       => q"${unparse(nested)}.${TermName(name)}"
         case OptionMap(ast2, Ident(alias), body) =>
           q"${unparse(ast2)}.map((${TermName(alias)}: ${tq""}) => ${unparse(body)})"
-        case CaseClassValueLift(_, v: Tree) => v
-        case other                          => c.fail(s"Unsupported AST: $other")
+        case CaseClassValueLift(_, v) => v
+        case other                    => c.fail(s"Unsupported AST: $other")
       }
 
     private def lift(v: Tree): Lift = {
@@ -73,7 +73,7 @@ trait ReifyLiftings extends LiftUser {
             case other                                        => other
           }
 
-        case QuotedReference(ref: Tree, refAst) =>
+        case QuotedReference(ref, refAst) =>
           val newAst =
             Transform(refAst) {
               case lift: Lift =>

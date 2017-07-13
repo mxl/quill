@@ -124,10 +124,10 @@ case class Foreach(query: Ast, alias: Ident, body: Ast) extends Action
 
 case class Dynamic(tree: Any) extends Ast
 
-case class QuotedReference(tree: Any, ast: Ast) extends Ast
-
 trait LiftUser {
   val c: MacroContext
+
+  case class QuotedReference(tree: c.universe.Tree, ast: Ast) extends Ast
 
   sealed trait Lift extends Ast {
     val name: String
@@ -135,12 +135,12 @@ trait LiftUser {
   }
 
   sealed trait ScalarLift extends Lift {
-    val encoder: Any
+    val encoder: c.universe.Tree
   }
 
-  case class ScalarValueLift(name: String, value: c.universe.Tree, encoder: Any) extends ScalarLift
+  case class ScalarValueLift(name: String, value: c.universe.Tree, encoder: c.universe.Tree) extends ScalarLift
 
-  case class ScalarQueryLift(name: String, value: c.universe.Tree, encoder: Any) extends ScalarLift
+  case class ScalarQueryLift(name: String, value: c.universe.Tree, encoder: c.universe.Tree) extends ScalarLift
 
   sealed trait CaseClassLift extends Lift
 
