@@ -11,7 +11,7 @@ import io.getquill.util.Messages._
 case class ScalarValueLifting[T, U](value: T, encoder: EncodingDsl#Encoder[U])
 case class CaseClassValueLifting[T](value: T)
 
-trait ReifyLiftings {
+trait ReifyLiftings extends LiftUser {
   val c: MacroContext
   import c.universe.{ Ident => _, _ }
 

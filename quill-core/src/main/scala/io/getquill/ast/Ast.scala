@@ -1,8 +1,12 @@
 package io.getquill.ast
 
+import scala.language.existentials
+import scala.reflect.macros.whitebox.{ Context => MacroContext }
+
 //************************************************************
 
 sealed trait Ast {
+  type Lift = u.Lift forSome { val u: LiftUser }
   override def toString = {
     import io.getquill.MirrorIdiom._
     import io.getquill.idiom.StatementInterpolator._
@@ -10,6 +14,7 @@ sealed trait Ast {
       Tokenizer[Lift](_ => stmt"?")
     this.token.toString
   }
+
 }
 
 //************************************************************
@@ -121,17 +126,26 @@ case class Dynamic(tree: Any) extends Ast
 
 case class QuotedReference(tree: Any, ast: Ast) extends Ast
 
-sealed trait Lift extends Ast {
-  val name: String
-  val value: Any
-}
+trait LiftUser {
+  val c: MacroContext
 
-sealed trait ScalarLift extends Lift {
-  val encoder: Any
-}
-case class ScalarValueLift(name: String, value: Any, encoder: Any) extends ScalarLift
-case class ScalarQueryLift(name: String, value: Any, encoder: Any) extends ScalarLift
+  sealed trait Lift extends Ast {
+    val name: String
+    val value: c.universe.Tree
+  }
 
-sealed trait CaseClassLift extends Lift
-case class CaseClassValueLift(name: String, value: Any) extends CaseClassLift
-case class CaseClassQueryLift(name: String, value: Any) extends CaseClassLift
+  sealed trait ScalarLift extends Lift {
+    val encoder: Any
+  }
+
+  case class ScalarValueLift(name: String, value: c.universe.Tree, encoder: Any) extends ScalarLift
+
+  case class ScalarQueryLift(name: String, value: c.universe.Tree, encoder: Any) extends ScalarLift
+
+  sealed trait CaseClassLift extends Lift
+
+  case class CaseClassValueLift(name: String, value: c.universe.Tree) extends CaseClassLift
+
+  case class CaseClassQueryLift(name: String, value: c.universe.Tree) extends CaseClassLift
+
+}
