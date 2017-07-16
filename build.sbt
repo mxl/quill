@@ -2,34 +2,27 @@ import ReleaseTransformations._
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 import sbtrelease.ReleasePlugin
+import sbtcrossproject.{crossProject, CrossType}
 
 lazy val `quill` =
   (project in file("."))
     .settings(tutSettings ++ commonSettings)
     .settings(`tut-settings`:_*)
     .dependsOn(
-      `quill-core-jvm`, `quill-core-js`, `quill-sql-jvm`, `quill-sql-js`,
+      `quill-core-jvm`, `quill-core-js`, `quill-core-native`,
+      `quill-sql-jvm`, `quill-sql-js`, `quill-sql-native`,
       `quill-jdbc`, `quill-finagle-mysql`, `quill-finagle-postgres`, `quill-async`,
       `quill-async-mysql`, `quill-async-postgres`, `quill-cassandra`, `quill-orientdb`
     ).aggregate(
-      `quill-core-jvm`, `quill-core-js`, `quill-sql-jvm`, `quill-sql-js`,
+      `quill-core-jvm`, `quill-core-js`, `quill-core-native`,
+      `quill-sql-jvm`, `quill-sql-js`, `quill-sql-native`,
       `quill-jdbc`, `quill-finagle-mysql`, `quill-finagle-postgres`, `quill-async`,
       `quill-async-mysql`, `quill-async-postgres`, `quill-cassandra`, `quill-orientdb`
     )
 
-lazy val superPure = new org.scalajs.sbtplugin.cross.CrossType {
-  def projectDir(crossBase: File, projectType: String): File =
-    projectType match {
-      case "jvm" => crossBase
-      case "js"  => crossBase / s".$projectType"
-    }
-
-  def sharedSrcDir(projectBase: File, conf: String): Option[File] =
-    Some(projectBase.getParentFile / "src" / conf / "scala")
-}
-
 lazy val `quill-core` =
-  crossProject.crossType(superPure)
+  crossProject(JSPlatform, JVMPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
     .settings(libraryDependencies ++= Seq(
@@ -37,25 +30,37 @@ lazy val `quill-core` =
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "org.scala-lang"             %  "scala-reflect" % scalaVersion.value
     ))
+    .jsSettings(jsSettings: _*)
     .jsSettings(
       libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % "0.2.1",
+      coverageExcludedPackages := ".*"
+    )
+    .jvmSettings(jvmSettings: _*)
+    .nativeSettings(
       coverageExcludedPackages := ".*"
     )
 
 lazy val `quill-core-jvm` = `quill-core`.jvm
 lazy val `quill-core-js` = `quill-core`.js
+lazy val `quill-core-native` = `quill-core`.native
 
 lazy val `quill-sql` =
-  crossProject.crossType(superPure)
+  crossProject(JSPlatform, JVMPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
     .settings(commonSettings: _*)
     .settings(mimaSettings: _*)
     .jsSettings(
+      coverageExcludedPackages := ".*"
+    )
+    .jvmSettings(jvmSettings: _*)
+    .nativeSettings(
       coverageExcludedPackages := ".*"
     )
     .dependsOn(`quill-core` % "compile->compile;test->test")
 
 lazy val `quill-sql-jvm` = `quill-sql`.jvm
 lazy val `quill-sql-js` = `quill-sql`.js
+lazy val `quill-sql-native` = `quill-sql`.native
 
 lazy val `quill-jdbc` =
   (project in file("quill-jdbc"))
@@ -233,13 +238,22 @@ def updateWebsiteTag =
     st
   })
 
+lazy val jvmAndJsSettings = Seq(
+  libraryDependencies ++= Seq(
+    "org.scalatest"   %%% "scalatest"     % "3.0.3"     % Test
+  )
+)
+
+lazy val jvmSettings = jvmAndJsSettings
+
+lazy val jsSettings = jvmAndJsSettings
+
 lazy val commonSettings = ReleasePlugin.extraReleaseCommands ++ Seq(
   organization := "io.getquill",
   scalaVersion := "2.11.11",
   crossScalaVersions := Seq("2.11.11","2.12.2"),
   libraryDependencies ++= Seq(
     "org.scalamacros" %% "resetallattrs"  % "1.0.0",
-    "org.scalatest"   %%% "scalatest"     % "3.0.3"     % Test,
     "ch.qos.logback"  % "logback-classic" % "1.2.3"     % Test,
     "com.google.code.findbugs" % "jsr305" % "3.0.2"     % Provided // just to avoid warnings during compilation
   ),
