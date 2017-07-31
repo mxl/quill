@@ -5,57 +5,36 @@ import java.util.Date
 import io.getquill.context.orientdb.OrientDBSessionContext
 import io.getquill.util.Messages.fail
 
+import scala.reflect.{ClassTag, classTag}
+
 trait Decoders extends CollectionDecoders {
   this: OrientDBSessionContext[_] =>
 
-  type Decoder[T] = OrientDBDecoder[T]
-
-  case class OrientDBDecoder[T](decoder: BaseDecoder[T]) extends BaseDecoder[T] {
-    override def apply(index: Index, row: ResultRow) =
-      decoder(index, row)
-  }
-
-  def decoder[T](d: BaseDecoder[T]): Decoder[T] = OrientDBDecoder(
+  def rawDecoder[S, T: ClassTag](f: PartialFunction[S, T] = PartialFunction[T, T](identity),
+    d: BaseDecoder[S] = (index, row) => row.field[S](row.fieldNames()(index))): RawDecoder[T] =
     (index, row) =>
-      if (index >= row.fieldNames().length || row.fieldValues()(index) == null) {
-        fail(s"Expected column at index $index to be defined but is was empty")
-      } else
-        d(index, row)
-  )
-
-  def decoder[T](f: ResultRow => Index => T): Decoder[T] =
-    decoder((index, row) => f(row)(index))
-
-  implicit def optionDecoder[T](implicit d: Decoder[T]): Decoder[Option[T]] =
-    OrientDBDecoder((index, row) => {
-      if (index < row.fieldValues().length) {
-        row.fieldValues()(index) == null match {
-          case true  => None
-          case false => Some(d(index, row))
+      if (row.fieldValues()(index) == null) {
+        None
+      } else {
+        val value = d(index, row)
+        if (f.isDefinedAt(value)) {
+          Some(f(value))
+        } else {
+          fail(s"Value '$value' at index $index can't be decoded to '${classTag[T].runtimeClass}'")
         }
-      } else None
-    })
+      }
 
-  implicit def mappedDecoder[I, O](implicit mapped: MappedEncoding[I, O], decoder: Decoder[I]): Decoder[O] =
-    OrientDBDecoder(mappedBaseDecoder(mapped, decoder.decoder))
-
-  implicit val stringDecoder: Decoder[String] = decoder((index, row) => {
-    row.field[String](row.fieldNames()(index))
-  })
-  implicit val doubleDecoder: Decoder[Double] = decoder((index, row) => row.field[Double](row.fieldNames()(index)))
-  implicit val bigDecimalDecoder: Decoder[BigDecimal] = decoder((index, row) => BigDecimal.apply(row.field[Double](row.fieldNames()(index))))
-  implicit val booleanDecoder: Decoder[Boolean] = decoder((index, row) => row.field[Boolean](row.fieldNames()(index)))
-  implicit val intDecoder: Decoder[Int] = decoder((index, row) => row.field[Int](row.fieldNames()(index)))
-  implicit val shortDecoder: Decoder[Short] = decoder((index, row) => row.field[Short](row.fieldNames()(index)))
-  implicit val longDecoder: Decoder[Long] = decoder((index, row) => {
-    if (row.fieldValues()(index).isInstanceOf[Int]) {
-      row.field[Int](row.fieldNames()(index)).toLong
-    } else
-      row.field[Long](row.fieldNames()(index))
-  })
-  implicit val floatDecoder: Decoder[Float] = decoder((index, row) => row.field[Double](row.fieldNames()(index)).toFloat)
-  implicit val byteArrayDecoder: Decoder[Array[Byte]] = decoder((index, row) => {
-    row.field[Array[Byte]](row.fieldNames()(index))
-  })
-  implicit val dateDecoder: Decoder[Date] = decoder((index, row) => row.field[Date](row.fieldNames()(index)))
+  implicit val stringDecoder: RawDecoder[String] = rawDecoder()
+  implicit val doubleDecoder: RawDecoder[Double] = rawDecoder()
+  implicit val bigDecimalDecoder: RawDecoder[BigDecimal] = rawDecoder[Double, BigDecimal](PartialFunction(BigDecimal.apply))
+  implicit val booleanDecoder: RawDecoder[Boolean] = rawDecoder()
+  implicit val intDecoder: RawDecoder[Int] = rawDecoder()
+  implicit val shortDecoder: RawDecoder[Short] = rawDecoder()
+  implicit val longDecoder: RawDecoder[Long] = rawDecoder[Any, Long] {
+    case v: Int => v.toLong
+    case v: Long => v
+  }
+  implicit val floatDecoder: RawDecoder[Float] = rawDecoder[Double, Float](PartialFunction(_.toFloat))
+  implicit val byteArrayDecoder: RawDecoder[Array[Byte]] = rawDecoder()
+  implicit val dateDecoder: RawDecoder[Date] = rawDecoder()
 }

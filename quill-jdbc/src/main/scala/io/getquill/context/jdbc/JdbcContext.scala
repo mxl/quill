@@ -1,20 +1,22 @@
 package io.getquill.context.jdbc
 
 import java.io.Closeable
-import java.sql.{ Connection, JDBCType, PreparedStatement, ResultSet }
+import java.sql.{Connection, JDBCType, PreparedStatement, ResultSet}
 import javax.sql.DataSource
 
 import io.getquill.context.sql.SqlContext
 import io.getquill.context.sql.idiom.SqlIdiom
 import io.getquill.NamingStrategy
+import io.getquill.dsl.PlainOptionRawDecoderDsl
 import io.getquill.util.ContextLogger
 
 import scala.annotation.tailrec
-import scala.util.{ DynamicVariable, Try }
+import scala.util.{DynamicVariable, Try}
 import scala.util.control.NonFatal
 
 abstract class JdbcContext[Dialect <: SqlIdiom, Naming <: NamingStrategy](dataSource: DataSource with Closeable)
   extends SqlContext[Dialect, Naming]
+  with PlainOptionRawDecoderDsl
   with Encoders
   with Decoders {
 

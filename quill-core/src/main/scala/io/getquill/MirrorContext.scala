@@ -1,18 +1,20 @@
 package io.getquill
 
 import io.getquill.context.Context
-import io.getquill.context.mirror.{ MirrorDecoders, MirrorEncoders, Row }
-import io.getquill.idiom.{ Idiom => BaseIdiom }
+import io.getquill.context.mirror.{MirrorDecoders, MirrorEncoders, Row}
+import io.getquill.dsl.PlainIdentityRawDecoderDsl
+import io.getquill.idiom.{Idiom => BaseIdiom}
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 class MirrorContextWithQueryProbing[Idiom <: BaseIdiom, Naming <: NamingStrategy]
   extends MirrorContext[Idiom, Naming] with QueryProbing
 
 class MirrorContext[Idiom <: BaseIdiom, Naming <: NamingStrategy]
   extends Context[Idiom, Naming]
-  with MirrorEncoders
-  with MirrorDecoders {
+    with PlainIdentityRawDecoderDsl
+    with MirrorEncoders
+    with MirrorDecoders {
 
   override type PrepareRow = Row
   override type ResultRow = Row
@@ -53,14 +55,14 @@ class MirrorContext[Idiom <: BaseIdiom, Naming <: NamingStrategy]
     ActionMirror(string, prepare(Row())._2)
 
   def executeActionReturning[O](string: String, prepare: Prepare = identityPrepare, extractor: Extractor[O],
-                                returningColumn: String) =
+    returningColumn: String) =
     ActionReturningMirror[O](string, prepare(Row())._2, extractor, returningColumn)
 
   def executeBatchAction(groups: List[BatchGroup]) =
     BatchActionMirror {
       groups.map {
         case BatchGroup(string, prepare) =>
-          (string, prepare.map(_(Row())._2))
+          (string, prepare.map(_ (Row())._2))
       }
     }
 
@@ -68,7 +70,7 @@ class MirrorContext[Idiom <: BaseIdiom, Naming <: NamingStrategy]
     BatchActionReturningMirror[T](
       groups.map {
         case BatchGroupReturning(string, column, prepare) =>
-          (string, column, prepare.map(_(Row())._2))
+          (string, column, prepare.map(_ (Row())._2))
       }, extractor
     )
 }

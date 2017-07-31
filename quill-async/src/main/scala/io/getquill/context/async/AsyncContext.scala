@@ -1,23 +1,23 @@
 package io.getquill.context.async
 
-import com.github.mauricio.async.db.Connection
-import com.github.mauricio.async.db.{ QueryResult => DBQueryResult }
-import com.github.mauricio.async.db.RowData
 import com.github.mauricio.async.db.pool.PartitionedConnectionPool
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-import scala.util.Try
+import com.github.mauricio.async.db.{Connection, RowData, QueryResult => DBQueryResult}
+import io.getquill.NamingStrategy
 import io.getquill.context.sql.SqlContext
 import io.getquill.context.sql.idiom.SqlIdiom
-import io.getquill.NamingStrategy
+import io.getquill.dsl.{PlainEncoderDsl, PlainOptionRawDecoderDsl}
 import io.getquill.util.ContextLogger
+
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration.Duration
+import scala.util.Try
 
 abstract class AsyncContext[D <: SqlIdiom, N <: NamingStrategy, C <: Connection](pool: PartitionedConnectionPool[C])
   extends SqlContext[D, N]
-  with Decoders
-  with Encoders {
+    with PlainEncoderDsl
+    with PlainOptionRawDecoderDsl
+    with Decoders
+    with Encoders {
 
   private val logger = ContextLogger(classOf[AsyncContext[_, _, _]])
 
@@ -38,8 +38,8 @@ abstract class AsyncContext[D <: SqlIdiom, N <: NamingStrategy, C <: Connection]
 
   protected def withConnection[T](f: Connection => Future[T])(implicit ec: ExecutionContext) =
     ec match {
-      case TransactionalExecutionContext(ec, conn) => f(conn)
-      case other                                   => f(pool)
+      case TransactionalExecutionContext(_, conn) => f(conn)
+      case _ => f(pool)
     }
 
   protected def extractActionResult[O](returningColumn: String, extractor: Extractor[O])(result: DBQueryResult): O
@@ -62,7 +62,7 @@ abstract class AsyncContext[D <: SqlIdiom, N <: NamingStrategy, C <: Connection]
     withConnection(_.sendPreparedStatement(sql, values)).map {
       _.rows match {
         case Some(rows) => rows.map(extractor).toList
-        case None       => Nil
+        case None => Nil
       }
     }
   }

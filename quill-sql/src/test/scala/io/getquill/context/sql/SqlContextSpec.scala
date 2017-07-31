@@ -86,7 +86,7 @@ class SqlContextSpec extends Spec {
       implicit val localDateEncoder: Encoder[LocalDate] = encoder[LocalDate]
       implicit val uuidEncoder: Encoder[UUID] = encoder[UUID]
 
-      implicit def optionDecoder[T](implicit d: Decoder[T]): Decoder[Option[T]] = decoder[Option[T]]
+      implicit def rawDecoder[T](implicit d: Decoder[T]): Decoder[Option[T]] = decoder[Option[T]]
 
       implicit val stringDecoder: Decoder[String] = decoder[String]
       implicit val bigDecimalDecoder: Decoder[BigDecimal] = decoder[BigDecimal]

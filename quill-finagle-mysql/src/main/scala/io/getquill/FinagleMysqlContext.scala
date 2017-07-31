@@ -19,7 +19,8 @@ import io.getquill.context.finagle.mysql.FinagleMysqlDecoders
 import io.getquill.context.finagle.mysql.FinagleMysqlEncoders
 import io.getquill.context.finagle.mysql.SingleValueRow
 import io.getquill.context.sql.SqlContext
-import io.getquill.util.{ ContextLogger, LoadConfig }
+import io.getquill.dsl.PlainOptionRawDecoderDsl
+import io.getquill.util.{ContextLogger, LoadConfig}
 import io.getquill.util.Messages.fail
 
 class FinagleMysqlContext[N <: NamingStrategy](
@@ -28,6 +29,7 @@ class FinagleMysqlContext[N <: NamingStrategy](
   private[getquill] val extractionTimeZone: TimeZone
 )
   extends SqlContext[MySQLDialect, N]
+  with PlainOptionRawDecoderDsl
   with FinagleMysqlDecoders
   with FinagleMysqlEncoders {
 

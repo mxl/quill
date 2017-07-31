@@ -57,7 +57,7 @@ class ArrayEncodingSpec extends Spec {
     }
     "decoders" in {
       import impl.decodeDecor
-      implicit val d = decoder[Set[Raw]]
+      implicit val d = rawDecoder[Set[Raw]]
       "implicitly[Decoder[Vector[Decor]]]" mustNot compile
     }
   }

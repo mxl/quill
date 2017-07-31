@@ -25,17 +25,17 @@ trait ArrayEncoding {
   implicit def arrayDateEncoder[Col <: Seq[Date]]: Encoder[Col]
   implicit def arrayLocalDateEncoder[Col <: Seq[LocalDate]]: Encoder[Col]
 
-  implicit def arrayStringDecoder[Col <: Seq[String]](implicit bf: CBF[String, Col]): Decoder[Col]
-  implicit def arrayBigDecimalDecoder[Col <: Seq[BigDecimal]](implicit bf: CBF[BigDecimal, Col]): Decoder[Col]
-  implicit def arrayBooleanDecoder[Col <: Seq[Boolean]](implicit bf: CBF[Boolean, Col]): Decoder[Col]
-  implicit def arrayByteDecoder[Col <: Seq[Byte]](implicit bf: CBF[Byte, Col]): Decoder[Col]
-  implicit def arrayShortDecoder[Col <: Seq[Short]](implicit bf: CBF[Short, Col]): Decoder[Col]
-  implicit def arrayIntDecoder[Col <: Seq[Int]](implicit bf: CBF[Int, Col]): Decoder[Col]
-  implicit def arrayLongDecoder[Col <: Seq[Long]](implicit bf: CBF[Long, Col]): Decoder[Col]
-  implicit def arrayFloatDecoder[Col <: Seq[Float]](implicit bf: CBF[Float, Col]): Decoder[Col]
-  implicit def arrayDoubleDecoder[Col <: Seq[Double]](implicit bf: CBF[Double, Col]): Decoder[Col]
-  implicit def arrayDateDecoder[Col <: Seq[Date]](implicit bf: CBF[Date, Col]): Decoder[Col]
-  implicit def arrayLocalDateDecoder[Col <: Seq[LocalDate]](implicit bf: CBF[LocalDate, Col]): Decoder[Col]
+  implicit def arrayStringDecoder[Col <: Seq[String]](implicit bf: CBF[String, Col]): RawDecoder[Col]
+  implicit def arrayBigDecimalDecoder[Col <: Seq[BigDecimal]](implicit bf: CBF[BigDecimal, Col]): RawDecoder[Col]
+  implicit def arrayBooleanDecoder[Col <: Seq[Boolean]](implicit bf: CBF[Boolean, Col]): RawDecoder[Col]
+  implicit def arrayByteDecoder[Col <: Seq[Byte]](implicit bf: CBF[Byte, Col]): RawDecoder[Col]
+  implicit def arrayShortDecoder[Col <: Seq[Short]](implicit bf: CBF[Short, Col]): RawDecoder[Col]
+  implicit def arrayIntDecoder[Col <: Seq[Int]](implicit bf: CBF[Int, Col]): RawDecoder[Col]
+  implicit def arrayLongDecoder[Col <: Seq[Long]](implicit bf: CBF[Long, Col]): RawDecoder[Col]
+  implicit def arrayFloatDecoder[Col <: Seq[Float]](implicit bf: CBF[Float, Col]): RawDecoder[Col]
+  implicit def arrayDoubleDecoder[Col <: Seq[Double]](implicit bf: CBF[Double, Col]): RawDecoder[Col]
+  implicit def arrayDateDecoder[Col <: Seq[Date]](implicit bf: CBF[Date, Col]): RawDecoder[Col]
+  implicit def arrayLocalDateDecoder[Col <: Seq[LocalDate]](implicit bf: CBF[LocalDate, Col]): RawDecoder[Col]
 
   implicit def arrayMappedEncoder[I, O, Col[_] <: Seq[I]](
     implicit
@@ -49,9 +49,9 @@ trait ArrayEncoding {
   implicit def arrayMappedDecoder[I, O, Col[_] <: Seq[O]](
     implicit
     mapped: MappedEncoding[I, O],
-    d:      Decoder[Seq[I]],
+    d:      RawDecoder[Seq[I]],
     bf:     CanBuildFrom[Nothing, O, Col[O]]
-  ): Decoder[Col[O]] = {
+  ): RawDecoder[Col[O]] = {
     mappedDecoder[Seq[I], Col[O]](MappedEncoding((col: Seq[I]) =>
       col.foldLeft(bf())((b, x) => b += mapped.f(x)).result()), d)
   }

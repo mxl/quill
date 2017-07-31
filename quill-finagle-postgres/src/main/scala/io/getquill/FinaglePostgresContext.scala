@@ -1,14 +1,20 @@
 package io.getquill
 
-import com.twitter.util.{ Await, Future, Local }
+import com.twitter.util.{Await, Future, Local}
 import com.twitter.finagle.postgres._
 import com.typesafe.config.Config
 import io.getquill.context.finagle.postgres._
 import io.getquill.context.sql.SqlContext
-import io.getquill.util.{ ContextLogger, LoadConfig }
+import io.getquill.dsl.PlainOptionRawDecoderDsl
+import io.getquill.util.{ContextLogger, LoadConfig}
+
 import scala.util.Try
 
-class FinaglePostgresContext[N <: NamingStrategy](client: PostgresClient) extends SqlContext[FinaglePostgresDialect, N] with FinaglePostgresEncoders with FinaglePostgresDecoders {
+class FinaglePostgresContext[N <: NamingStrategy](client: PostgresClient) extends
+  SqlContext[FinaglePostgresDialect, N]
+  with PlainOptionRawDecoderDsl
+  with FinaglePostgresEncoders
+  with FinaglePostgresDecoders {
 
   def this(config: FinaglePostgresContextConfig) = this(config.client)
   def this(config: Config) = this(FinaglePostgresContextConfig(config))

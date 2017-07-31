@@ -1,15 +1,17 @@
 package io.getquill.context.cassandra
 
-import java.util.{ Date, UUID }
+import java.util.{Date, UUID}
 
 import io.getquill.NamingStrategy
 import io.getquill.context.Context
-import io.getquill.context.cassandra.encoding.{ CassandraMapper, CassandraMapperConversions, CassandraTypes }
+import io.getquill.context.cassandra.encoding.{CassandraMapper, CassandraMapperConversions, CassandraTypes}
+import io.getquill.dsl.PlainOptionRawDecoderDsl
 
 import scala.reflect.ClassTag
 
 trait CassandraContext[N <: NamingStrategy]
   extends Context[CqlIdiom, N]
+  with PlainOptionRawDecoderDsl
   with CassandraMapperConversions
   with CassandraTypes
   with Ops {
